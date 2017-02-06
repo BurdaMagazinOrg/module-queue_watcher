@@ -79,18 +79,21 @@ class ConfigForm extends FormBase {
         '#maxlength' => 255,
         '#title' => $this->t('Queue machine name'),
         '#value' => $queue_to_watch['queue_name'],
+        '#required' => TRUE,
       ];
       $form['watch_queues'][$i]['size_limit_warning'] = [
         '#type' => 'textfield',
         '#maxlength' => 255,
         '#title' => $this->t('The size limit as a valid, but undesired number of items'),
         '#value' => $queue_to_watch['size_limit_warning'],
+        '#description' => $this->t('Leave it empty if you don\'t have an undesired limit. May be useful if you want to have a buffer for preparing performance optimisations. Writes a warning in the log (if writing into system log is activated above).'),
       ];
       $form['watch_queues'][$i]['size_limit_critical'] = [
         '#type' => 'textfield',
         '#maxlength' => 255,
         '#title' => $this->t('The size limit as a critical, maximum allowed number of items'),
         '#value' => $queue_to_watch['size_limit_critical'],
+        '#description' => $this->t('Leave it empty if you don\'t have a critical limit. Writes an error in the log (if writing into system log is activated above).'),
       ];
       $i++;
     }
