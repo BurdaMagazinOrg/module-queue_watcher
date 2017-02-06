@@ -1,15 +1,13 @@
 <?php
 
-/**
- * @file
- * Class for the Queue Watcher configuration form. 
- */
-
 namespace Drupal\queue_watcher\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
+/**
+ * Class for the Queue Watcher configuration form. 
+ */
 class ConfigForm extends FormBase {
   public function getFormId() {
     return 'queue_watcher_config_form';
@@ -59,14 +57,14 @@ class ConfigForm extends FormBase {
 
     $form['watch_queues'] = [
       '#type' => 'fieldset',
-      '#title' => $this->t('Target addresses to notify'),
+      '#title' => $this->t('Queues to watch'),
       '#collapsible' => FALSE,
       '#collapsed' => FALSE,
       '#tree' => TRUE,
       '#weight' => 20,
     ];
 
-    $i = 0;
+    $i = 1;
     foreach ($config->get('watch_queues') as $queue_to_watch) {
       $form['watch_queues'][$i] = [
         '#type' => 'fieldset',
@@ -97,9 +95,13 @@ class ConfigForm extends FormBase {
       $i++;
     }
 
+    $form['actions'] = [
+      '#weight' => 100,
+    ];
     $form['actions']['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Save'),
+      '#weight' => 10,
     ];
 
     return $form;
