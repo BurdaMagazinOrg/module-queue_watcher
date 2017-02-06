@@ -22,7 +22,7 @@ queue_watcher.config:
       label: 'Queues to watch'
       sequence:
         type: mapping
-        label 'Queue to watch'
+        label: 'Queue to watch'
         mapping:
           queue_name:
             type: string
@@ -32,4 +32,4 @@ queue_watcher.config:
             label: 'The size limit as a valid, but undesired number of items.'
           size_limit_critical:
             type: integer
-            label 'The size limit as a maximum allowed number of items'
+            label: 'The size limit as a maximum allowed number of items'
