@@ -1,0 +1,12 @@
+{
+  "name": "mxhaupt/queue_watcher",
+  "description": "Automatically checks queues and sends reports in case of abnormal queue sizes.",
+  "type": "drupal-module",
+  "license": "GPL-2.0+",
+  "authors": [
+    {
+      "name": "Maximilian Haupt",
+      "email": "webit.haupt@googlemail.com"
+    }
+  ]
+}

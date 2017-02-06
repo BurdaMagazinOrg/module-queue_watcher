@@ -1,0 +1,5 @@
+type: "module"
+name: "Queue Watcher"
+description: "Lets you define automatic checks for specific queues regarding their overall size."
+package: "Performance"
+core: "8.x"

@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Queue Watcher module file.
+ */
+
+/**
+ * Implements hook_cron(). 
+ */
+function queue_watcher_cron() {
+
+}
