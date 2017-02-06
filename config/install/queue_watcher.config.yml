@@ -1,0 +1,7 @@
+langcode: en
+use_logger: true
+use_site_mail: false
+use_admin_mail: true
+mail_recipients: ''
+watch_queues:
+  - { queue_name: '', size_limit_warning: '', size_limit_critical: '' }

@@ -4,7 +4,7 @@ queue_watcher.config:
   mapping:
     use_logger:
       type: boolean
-      label: 'Log recognized size exceedance.'
+      label: 'Write occurences into the system log.'
     use_site_mail:
       type: boolean
       label: 'Send notification mail to website email.'
@@ -32,4 +32,4 @@ queue_watcher.config:
             label: 'The size limit as a valid, but undesired number of items.'
           size_limit_critical:
             type: integer
-            label: 'The size limit as a maximum allowed number of items'
+            label: 'The size limit as a critical, maximum allowed number of items'
