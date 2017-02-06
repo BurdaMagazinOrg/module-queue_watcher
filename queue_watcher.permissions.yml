@@ -1,0 +1,3 @@
+administer queue watcher:
+  title: Administer Queue Watcher settings
+  restrict access: true

@@ -1,0 +1,7 @@
+queue_watcher.config_page:
+  path: '/admin/config/queue-watcher'
+  defaults:
+    _title: 'Queue Watcher configuration'
+    _form: '\Drupal\queue_watcher\Form\ConfigForm'
+  requirements:
+    _permission: 'administer queue watcher'
