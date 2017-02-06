@@ -18,7 +18,7 @@ and sends reports to certain E-Mail addresses
 and the logging system in case of exceeded limits.
 
 The module also adds some Drush helper commands, e.g.
-$ drush queue-watcher-size
+<code>$ drush queue-watcher-size</code>
 .. to get a list of currently existent queues with their sizes.
 
 INSTALLATION
@@ -30,7 +30,7 @@ Install the module itself as usual, see
 https://www.drupal.org/docs/8/extending-drupal-8/installing-contributed-modules-find-import-enable-configure-drupal-8.
 
 Configure your queue sizes and target report addresses on
-admin/config/queue_watcher
+admin/config/queue-watcher
 
 AVAILABLE DRUSH COMMANDS
 ------------------------
