@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Drush commands for render_queue.
+ * Drush commands for queue_watcher.
  */
 
 use \Drupal\Core\Queue\QueueInterface;
@@ -13,7 +13,7 @@ use \Drupal\Core\Queue\SuspendQueueException;
 /**
  * Implements hook_drush_command().
  */
-function render_queue_drush_command() {
+function queue_watcher_drush_command() {
   $commands = array();
 
   $commands['queue-watcher-size'] = [
