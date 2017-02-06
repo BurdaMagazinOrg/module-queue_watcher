@@ -1,0 +1,35 @@
+queue_watcher.config:
+  type: config_object
+  label: 'Queue Watcher configuration'
+  mapping:
+    use_logger:
+      type: boolean
+      label: 'Log recognized size exceedance.'
+    use_site_mail:
+      type: boolean
+      label: 'Send notification mail to website email.'
+    use_admin_mail:
+      type: boolean
+      label 'Send notification mail to website administrator (User with id 1).'
+    mail_recipients:
+      type: sequence
+      label: 'Mail recipients to send notifications about size exceedance.'
+        sequence:
+          type: string
+          label: 'Mail recipient'
+    watch_queues:
+      type: sequence
+      label: 'Queues to watch'
+      sequence:
+        type: mapping
+        label 'Queue to watch'
+        mapping:
+          queue_name:
+            type: string
+            label: 'Queue machine name'
+          size_limit_warning:
+            type: integer
+            label: 'The size limit as a valid, but undesired number of items.'
+          size_limit_critical:
+            type: integer
+            label 'The size limit as a maximum allowed number of items'
