@@ -34,8 +34,8 @@ function drush_queue_watcher_size($queue_name = NULL) {
   $query = \Drupal::database()
     ->select('queue', 'q')
     ->fields('q', ['name'])
-    ->addExpression('COUNT(q.item_id)', 'num_items')
     ->groupBy('name');
+  $query->addExpression('COUNT(q.item_id)', 'num_items');
   if (isset($queue_name)) {
     $query->where('q.name = :name', [':name' => $queue_name]);
   }
