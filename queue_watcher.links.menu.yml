@@ -1,0 +1,6 @@
+queue_watcher.config.form:
+  title: 'Queue Watcher configuration'
+  parent: system.admin_config_system
+  description: 'Configure notification recipients and which queues should be watched.'
+  weight: 100
+  route_name: queue_watcher.config_page
