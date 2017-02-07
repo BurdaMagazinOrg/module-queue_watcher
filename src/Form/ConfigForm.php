@@ -2,18 +2,25 @@
 
 namespace Drupal\queue_watcher\Form;
 
-use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element\StatusMessages;
+use Drupal\Component\Utility\Html;
 
 /**
  * Class for the Queue Watcher configuration form. 
  */
-class ConfigForm extends FormBase {
+class ConfigForm extends ConfigFormBase {
   public function getFormId() {
     return 'queue_watcher_config_form';
   }
 
+  protected function getEditableConfigNames() {
+    return ['queue_watcher.config'];
+  }
+
   public function buildForm(array $form, FormStateInterface $form_state) {
+    $form = parent::buildForm($form, $form_state);
     $config = $this->config('queue_watcher.config');
 
     $form['targets'] = [
@@ -28,21 +35,21 @@ class ConfigForm extends FormBase {
     $form['targets']['use_logger'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Write occurences into the system log.'),
-      '#value' => $config->get('use_logger'),
+      '#default_value' => $config->get('use_logger'),
       '#weight' => 10,
     ];
 
     $form['targets']['use_site_mail'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Send notification mail to website email.'),
-      '#value' => $config->get('use_site_mail'),
+      '#default_value' => $config->get('use_site_mail'),
       '#weight' => 20,
     ];
 
     $form['targets']['use_admin_mail'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Send notification mail to website administrator (User with id 1).'),
-      '#value' => $config->get('use_admin_mail'),
+      '#default_value' => $config->get('use_admin_mail'),
       '#weight' => 30,
     ];
 
@@ -51,7 +58,7 @@ class ConfigForm extends FormBase {
       '#maxlength' => 255,
       '#title' => $this->t('Mail recipients to send notifications about size exceedance.'),
       '#description' => $this->t('Enter multiple mail addresses separated by comma, e.g. <strong>one@two.com, three@four.com</strong>.'),
-      '#value' => $config->get('mail_recipients'),
+      '#default_value' => $config->get('mail_recipients'),
       '#weight' => 40,
     ];
 
@@ -64,53 +71,187 @@ class ConfigForm extends FormBase {
       '#weight' => 20,
     ];
 
-    $i = 1;
+    $num_queue_items = count($config->get('watch_queues'));
+    $form['watch_queues']['placeholder_for_new_queue_item'] = [
+      '#type' => 'container',
+      '#attributes' => ['id' => 'placeholder-for-new-queue-item'],
+      '#weight' => $num_queue_items * 100 - 10,
+    ];
+    $form['watch_queues']['add'] = [
+      '#tree' => FALSE,
+      '#type' => 'button',
+      '#name' => 'add_new_queue_item',
+      '#value' => t('Add another item'),
+      '#weight' => $num_queue_items * 100,
+      '#ajax' => [
+        'callback' => [$this, 'addNewQueueItem'],
+        'wrapper' => 'placeholder-for-new-queue-item',
+        'effect' => 'fade',
+        'method' => 'before',
+        'progress' => [
+          'type' => 'throbber',
+          'message' => t('Loading settings...'),
+        ],
+      ],
+    ];
+
+    $form_state->setValue('watch_queues_index', 1); // Reset the index counter.
     foreach ($config->get('watch_queues') as $queue_to_watch) {
-      $form['watch_queues'][$i] = [
+      $this->addQueueItem($form, $form_state, $queue_to_watch);
+    }
+
+    $form['actions']['#weight'] = 100;
+
+    return $form;
+  }
+
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    $config = $this->config('queue_watcher.config');
+
+    $values = $form_state->getValues();
+
+    $config->set('use_logger', (bool) $values['use_logger']);
+    $config->set('use_site_mail', (bool) $values['use_site_mail']);
+    $config->set('use_admin_mail', (bool) $values['use_admin_mail']);
+    $config->set('mail_recipients', $values['mail_recipients']);
+
+    foreach ($values['watch_queues'] as $index => $item) {
+      // Remove marked items.
+      if ($item['to_remove']) {
+        unset($values['watch_queues'][$index]);
+      }
+      else {
+        // Filter out unnecessary information.
+        unset($values['watch_queues'][$index]['to_remove']);
+        unset($values['watch_queues'][$index]['remove']);
+      }
+    }
+
+    $config->set('watch_queues', $values['watch_queues']);
+
+    $config->save();
+
+    parent::submitForm($form, $form_state);
+  }
+
+  public function addNewQueueItem(array &$form, FormStateInterface $form_state) {
+    $new = ['queue_name' => '', 'size_limit_warning' => '', 'size_limit_critical' => ''];
+
+    // Synchronize the state of the given form values with the config object.
+    $config = $this->config('queue_watcher.config');
+    $queues = $form_state->getValue('watch_queues', []);
+    $queues[] = $new;
+    $config->set('watch_queues', $queues);
+
+    $this->addQueueItem($form, $form_state, $new);
+    $form  = $this->rebuild($form_state, $form);
+    $i = $form_state->getValue('watch_queues_index');
+    return $form['watch_queues'][$i];
+  }
+
+  /**
+   * Helper function to add another queue item to the form.
+   */
+  protected function addQueueItem(&$form, $form_state, $queue_to_watch) {
+    $i = $form_state->getValue('watch_queues_index', 1);
+    // Get an index which isn't being used yet.
+    while (true) {
+      if (empty($form['watch_queues'][$i])) {
+        break;
+      }
+      $i++;
+    }
+    $form_state->setValue('watch_queues_index', $i);
+
+    // Is this item marked to be removed?
+    $queues = $form_state->getValue('watch_queues', []);
+    $to_remove = !empty($queues[$i]['to_remove']) ? $queues[$i]['to_remove'] : 0;
+
+    $id = Html::getUniqueId('edit-queue-item-' . $index);
+    $form['watch_queues'][$i] = [
         '#type' => 'fieldset',
         '#title' => $this->t('#@num Queue to watch', ['@num' => $i]),
         '#collapsible' => FALSE,
         '#collapsed' => FALSE,
         '#tree' => TRUE,
         '#weight' => $i * 10,
+        '#attributes' => ['id' => $id],
       ];
       $form['watch_queues'][$i]['queue_name'] = [
         '#type' => 'textfield',
         '#maxlength' => 255,
         '#title' => $this->t('Queue machine name'),
-        '#value' => $queue_to_watch['queue_name'],
-        '#required' => TRUE,
+        '#default_value' => $queue_to_watch['queue_name'],
+        '#required' => $to_remove ? FALSE : TRUE,
+        '#weight' => 10,
       ];
       $form['watch_queues'][$i]['size_limit_warning'] = [
         '#type' => 'textfield',
         '#maxlength' => 255,
         '#title' => $this->t('The size limit as a valid, but undesired number of items'),
-        '#value' => $queue_to_watch['size_limit_warning'],
+        '#default_value' => $queue_to_watch['size_limit_warning'],
         '#description' => $this->t('Leave it empty if you don\'t have an undesired limit. May be useful if you want to have a buffer for preparing performance optimisations. Writes a warning in the log (if writing into system log is activated above).'),
+        '#weight' => 20,
       ];
       $form['watch_queues'][$i]['size_limit_critical'] = [
         '#type' => 'textfield',
         '#maxlength' => 255,
         '#title' => $this->t('The size limit as a critical, maximum allowed number of items'),
-        '#value' => $queue_to_watch['size_limit_critical'],
+        '#default_value' => $queue_to_watch['size_limit_critical'],
         '#description' => $this->t('Leave it empty if you don\'t have a critical limit. Writes an error in the log (if writing into system log is activated above).'),
+        '#weight' => 30,
       ];
-      $i++;
-    }
 
-    $form['actions'] = [
-      '#weight' => 100,
-    ];
-    $form['actions']['submit'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Save'),
-      '#weight' => 10,
-    ];
+      // Find out whether this item is marked to be removed.
+      $form['watch_queues'][$i]['to_remove'] = [
+        '#type' => 'value',
+        '#value' => $to_remove,
+      ];
+      $form['watch_queues'][$i]['remove'] = [
+        '#type' => 'button',
+        '#name' => 'remove_queue_item_' . $i,
+        '#value' => t('Remove this item'),
+        '#ajax' => [
+          'callback' => [$this, 'removeQueueItem'],
+          'wrapper' => $id,
+          'effect' => 'fade',
+          'progress' => [
+            'type' => 'throbber',
+            'message' => t('Removing...'),
+          ],
+        ],
+        '#weight' => 100,
+      ];
 
-    return $form;
+      return $form['watch_queues'][$i];
   }
 
-  public function submitForm(array &$form, FormStateInterface $form_state) {
-    
+  public function removeQueueItem(array &$form, FormStateInterface $form_state) {
+    $trigger = $form_state->getTriggeringElement();
+    $i = $trigger['#parents'][1];
+
+    $queues = $form_state->getValue('watch_queues', []);
+    $queues[$i]['to_remove'] = 1;
+    $form_state->setValue('watch_queues', $queues);
+    $this->rebuild($form_state, $form);
+
+    drupal_set_message($this->t('Item will be removed permanently when configuration is saved.'));
+    return StatusMessages::renderMessages(NULL);
+  }
+
+  /**
+   * Helper function to rebuild the form when necessary.
+   *
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * @param array &$old_form
+   *   The old form build.
+   * @return array
+   *   The newly built form.
+   */
+  protected function rebuild(FormStateInterface $form_state, &$old_form) {
+    $form_state->setRebuild();
+    $form_builder = \Drupal::getContainer()->get('form_builder');
+    $form = $form_builder->rebuildForm($this->getFormId(), $form_state, $old_form);
+    return $form;
   }
 }
