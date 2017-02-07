@@ -21,6 +21,8 @@ The module also adds some Drush helper commands, e.g.
 <code>$ drush queue-watcher-size</code>
 .. to get a list of currently existent queues with their sizes.
 
+Furthermore you can see the size status of your queues in the status report.
+
 INSTALLATION
 ------------
 
