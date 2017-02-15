@@ -31,11 +31,7 @@ function queue_watcher_drush_command() {
  * Shows size information of the given queue.
  */
 function drush_queue_watcher_size($queue_name = NULL) {
-  $query = \Drupal::database()
-    ->select('queue', 'q')
-    ->fields('q', ['name'])
-    ->groupBy('name');
-  $query->addExpression('COUNT(q.item_id)', 'num_items');
+  $query = \Drupal\queue_watcher\QueueWatcher::queueQuery();
   if (isset($queue_name)) {
     $query->where('q.name = :name', [':name' => $queue_name]);
   }
