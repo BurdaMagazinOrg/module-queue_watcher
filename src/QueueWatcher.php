@@ -13,6 +13,11 @@ class QueueWatcher {
   protected $config;
 
   /**
+   * @var QueueStateContainer
+   */
+  protected $state_container;
+
+  /**
    * @var array
    */
   protected $queues_to_watch;
@@ -24,6 +29,7 @@ class QueueWatcher {
 
   public function __construct() {
     $this->config = \Drupal::config('queue_watcher.config');
+    $this->state_container = new QueueStateContainer();
     $this->initQueuesToWatch();
     $this->initRecipientsToReport();
   }
@@ -42,7 +48,16 @@ class QueueWatcher {
    * which are added in the Queue Watcher configuration.
    */
   public function lookup() {
-    
+    $states = $this->state_container->getAllStates();
+    foreach ($this->queues_to_watch as $queue_name => $defined) {
+      if (empty($states[$queue_name])) {
+        continue;
+      }
+      $state = $states[$queue_name];
+      if ($state->exceeds($defined['size_limit_warning'])) {
+        // Add the exceedance to warning list.
+      }
+    }
   }
 
   public function foundProblems() {

@@ -83,6 +83,7 @@ class QueueStateContainer {
    * while ::getState() can use in-memory caching once a state has been fetched.
    *
    * @return QueueState[]
+   *  An array of queue states, keyed by queue names.
    */
   public function getAllStates() {
     // No in-memory caching here,

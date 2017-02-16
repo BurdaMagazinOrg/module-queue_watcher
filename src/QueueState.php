@@ -32,4 +32,18 @@ class QueueState {
     $this->num_items = $num;
     return $this;
   }
+
+  /**
+   * Checks whether the current state of the queue
+   * exceeds the given limit.
+   *
+   * @param int $limit
+   *  The given limit as integer.
+   *
+   * @return boolean
+   *  TRUE if limit is exceeded, FALSE otherwise.
+   */
+  public function exceeds($limit) {
+    return ($this->getNumberOfItems() > $limit);
+  }
 }
