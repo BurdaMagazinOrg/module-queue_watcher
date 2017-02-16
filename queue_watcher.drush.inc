@@ -31,17 +31,19 @@ function queue_watcher_drush_command() {
  * Shows size information of the given queue.
  */
 function drush_queue_watcher_size($queue_name = NULL) {
-  $query = \Drupal\queue_watcher\QueueWatcher::queueQuery();
+  $state_container = new \Drupal\queue_watcher\QueueStateContainer();
+  $states = [];
   if (isset($queue_name)) {
-    $query->where('q.name = :name', [':name' => $queue_name]);
+    $states[$queue_name] = $state_container->getState($queue_name);
+  }
+  else {
+    $states = $state_container->getAllStates();
   }
 
-  $rows = $query->execute()->fetchAll();
-
-  foreach ($rows as $row) {
+  foreach ($states as $state) {
     drush_print('---');
-    drush_print(dt('Queue: @queue', ['@queue' => $row->name]));
-    drush_print(dt('Size (number of items): @num', ['@num' => $row->num_items]));
+    drush_print(dt('Queue: @queue', ['@queue' => $state->getQueueName()]));
+    drush_print(dt('Size (number of items): @num', ['@num' => $state->getNumberOfItems()]));
     drush_print('---');
   }
 }

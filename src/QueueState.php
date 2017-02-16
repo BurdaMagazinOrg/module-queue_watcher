@@ -21,4 +21,15 @@ class QueueState {
   public function getNumberOfItems() {
     return $this->num_items;
   }
+
+  /**
+   * Sets the number of items.
+   * This task is usually taken care of by the QueueStateContainer.
+   *
+   * @return QueueState
+   */
+  public function setNumberOfItems($num) {
+    $this->num_items = $num;
+    return $this;
+  }
 }
