@@ -38,7 +38,6 @@ class QueueStateContainer {
     $rows = $query->execute()->fetchAllAssoc('name');
     $fetched_states = [];
     foreach ($rows as $queue_name => $row) {
-      $fetched_states[$queue_name] = $this->states[$queue_name];
 
       if (isset($this->states[$queue_name])) {
         $this->states[$queue_name]->setNumberOfItems($row->num_items);
@@ -46,6 +45,7 @@ class QueueStateContainer {
       else {
         $this->states[$queue_name] = new QueueState($queue_name, $row->num_items);
       }
+      $fetched_states[$queue_name] = $this->states[$queue_name];
     }
 
     if (!isset($state) || empty($rows)) {

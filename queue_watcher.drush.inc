@@ -16,7 +16,7 @@ use \Drupal\Core\Queue\SuspendQueueException;
 function queue_watcher_drush_command() {
   $commands = array();
 
-  $commands['queue-watcher-size'] = [
+  $commands['queue-watcher-size-get'] = [
     'description' => dt('Shows size information of the given queue.'),
     'core' => ['8+'],
     'arguments' => [
@@ -30,7 +30,7 @@ function queue_watcher_drush_command() {
 /**
  * Shows size information of the given queue.
  */
-function drush_queue_watcher_size($queue_name = NULL) {
+function drush_queue_watcher_size_get($queue_name = NULL) {
   $state_container = new \Drupal\queue_watcher\QueueStateContainer();
   $states = [];
   if (isset($queue_name)) {
