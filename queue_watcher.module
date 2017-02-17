@@ -12,6 +12,6 @@ function queue_watcher_cron() {
   $watcher = new \Drupal\queue_watcher\QueueWatcher();
   $watcher->lookup();
   if ($watcher->foundProblems()) {
-    $watcher->reportProblems();
+    $watcher->report();
   }
 }

@@ -53,13 +53,20 @@ class ConfigForm extends ConfigFormBase {
       '#weight' => 30,
     ];
 
+    $form['targets']['notify_undefined'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Notify about queues which are not added to the watch list yet.'),
+      '#default_value' => $config->get('notify_undefined'),
+      '#weight' => 40,
+    ];
+
     $form['targets']['mail_recipients'] = [
       '#type' => 'textfield',
       '#maxlength' => 255,
       '#title' => $this->t('Mail recipients to send notifications about size exceedance.'),
       '#description' => $this->t('Enter multiple mail addresses separated by comma, e.g. <strong>one@two.com, three@four.com</strong>.'),
       '#default_value' => $config->get('mail_recipients'),
-      '#weight' => 40,
+      '#weight' => 50,
     ];
 
     $form['watch_queues'] = [
@@ -113,6 +120,7 @@ class ConfigForm extends ConfigFormBase {
     $config->set('use_logger', (bool) $values['use_logger']);
     $config->set('use_site_mail', (bool) $values['use_site_mail']);
     $config->set('use_admin_mail', (bool) $values['use_admin_mail']);
+    $config->set('notify_undefined', (bool) $values['notify_undefined']);
     $config->set('mail_recipients', $values['mail_recipients']);
 
     foreach ($values['watch_queues'] as $index => $item) {

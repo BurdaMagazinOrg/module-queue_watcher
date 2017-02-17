@@ -10,13 +10,16 @@ queue_watcher.config:
       label: 'Send notification mail to website email.'
     use_admin_mail:
       type: boolean
-      label 'Send notification mail to website administrator (User with id 1).'
+      label: 'Send notification mail to website administrator (User with id 1).'
     mail_recipients:
       type: sequence
       label: 'Mail recipients to send notifications about size exceedance.'
         sequence:
           type: string
           label: 'Mail recipient'
+    notify_undefined:
+      type: boolean
+      label: 'Notify about queues which are not added to the watch list yet.'
     watch_queues:
       type: sequence
       label: 'Queues to watch'

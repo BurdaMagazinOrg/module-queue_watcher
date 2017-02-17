@@ -8,6 +8,7 @@ namespace Drupal\queue_watcher;
 class QueueState {
   protected $queue_name;
   protected $num_items;
+  protected $state_level = 'undefined';
 
   public function __construct($queue_name, $num_items) {
     $this->queue_name = $queue_name;
@@ -24,6 +25,7 @@ class QueueState {
 
   /**
    * Sets the number of items.
+   *
    * This task is usually taken care of by the QueueStateContainer.
    *
    * @return QueueState
@@ -31,6 +33,22 @@ class QueueState {
   public function setNumberOfItems($num) {
     $this->num_items = $num;
     return $this;
+  }
+
+  public function getStateLevel() {
+    return $this->state_level;
+  }
+
+  /**
+   * Sets the level of this state.
+   *
+   * This task is usually taken care of by the QueueWatcher.
+   *
+   * @param string $level
+   *   The level of the state, can be 'sane', 'warning' or 'critical'.
+   */
+  public function setStateLevel($level) {
+    $this->state_level = $level;
   }
 
   /**

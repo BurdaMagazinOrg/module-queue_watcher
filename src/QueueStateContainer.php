@@ -92,4 +92,16 @@ class QueueStateContainer {
 
     return $this->states;
   }
+
+  /**
+   * Adds an empty queue state, if isn't known yet.
+   *
+   * @param string $queue_name
+   *  The name of the queue to track the state.
+   */
+  public function addEmptyState($queue_name) {
+    if (!isset($this->states[$queue_name])) {
+      $this->states[$queue_name] = new QueueState($queue_name, 0);
+    }
+  }
 }
