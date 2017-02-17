@@ -19,9 +19,10 @@ and the logging system in case of exceeded limits.
 
 The module also adds some Drush helper commands, e.g.
 <code>$ drush queue-watcher-lookup</code>
-.. to get a list of currently existent queues with their states.
 
-Furthermore you can see the status of your queues in the status report.
+.. to get a list of currently existent queues with their states and for optionally sending reports to the configured recipients (mails and/or logs).
+
+Furthermore you can see a status summary of your queue states in the status report.
 
 INSTALLATION
 ------------
@@ -37,7 +38,7 @@ admin/config/queue-watcher
 AVAILABLE DRUSH COMMANDS
 ------------------------
 
-$ drush queue-watcher-lookup
+<code>$ drush queue-watcher-lookup</code>
 
 .. performs a lookup and shows information of the given queue.
 See <code>drush help queue-watcher-lookup</code> for additional usage information.
