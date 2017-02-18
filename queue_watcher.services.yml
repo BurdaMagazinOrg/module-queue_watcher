@@ -1,0 +1,6 @@
+services:
+  queue_watcher:
+    class: Drupal\queue_watcher\QueueWatcher
+    arguments: ['@queue_watcher.state_container', '@plugin.manager.mail']
+  queue_watcher.state_container:
+    class: Drupal\queue_watcher\QueueStateContainer

@@ -43,7 +43,8 @@ function drush_queue_watcher_lookup() {
   $report_problems = drush_get_option('report-problems', FALSE);
   $recipient = drush_get_option('recipient', NULL);
 
-  $watcher = new \Drupal\queue_watcher\QueueWatcher();
+  /** @var \Drupal\queue_watcher\QueueWatcher $watcher **/
+  $watcher = \Drupal::service('queue_watcher');
 
   // Explicitly add the queues, which are defined by the user.
   $config = $watcher->getConfig();
@@ -57,15 +58,7 @@ function drush_queue_watcher_lookup() {
 
   // Print out state information, when desired.
   if (!$quiet) {
-    drush_print('------------------------------------------------------');
-    foreach ($watcher->getLookupResult() as $state_level => $states) {
-      foreach ($states as $state) {
-        drush_print(dt('Queue: @queue', ['@queue' => $state->getQueueName()]));
-        drush_print(dt('Size (number of items): @num', ['@num' => $state->getNumberOfItems()]));
-        drush_print(dt('State level: @level', ['@level' => $state_level]));
-        drush_print('------------------------------------------------------');
-      }
-    }
+    drush_print($watcher->getReadableStatus());
   }
 
   // Send reports when problems have been found.
@@ -75,7 +68,9 @@ function drush_queue_watcher_lookup() {
     }
     $watcher->report();
     if (!$quiet) {
-      drush_print(dt('Problem reports just have been sent to the configured recipients.'));
+      drush_print('------------------------------------------------------');
+      drush_print(dt('The summary above has just been sent to the configured recipients.'));
+      drush_print('------------------------------------------------------');
     }
   }
 }

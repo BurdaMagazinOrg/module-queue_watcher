@@ -2,6 +2,8 @@
 
 namespace Drupal\queue_watcher;
 
+use \Drupal\Core\Mail\MailManager;
+
 /**
  * The QueueWatcher class.
  */
@@ -32,9 +34,21 @@ class QueueWatcher {
    */
   protected $lookup_result;
 
-  public function __construct() {
+  /**
+   * @var MailManager
+   */
+  protected $mail_manager;
+
+  /**
+   * @param QueueStateContainer $state_container
+   *   The QueueStateContainer instance.
+   * @param MailManager $mail_manager
+   *   The mail manager.
+   */
+  public function __construct(QueueStateContainer $state_container, MailManager $mail_manager) {
     $this->config = \Drupal::config('queue_watcher.config');
-    $this->state_container = new QueueStateContainer();
+    $this->state_container = $state_container;
+    $this->mail_manager = $mail_manager;
     $this->initQueuesToWatch();
     $this->initRecipientsToReport();
     $this->initLookupResult();
@@ -116,8 +130,26 @@ class QueueWatcher {
    * Reports the current queue states to the configured recipients and logs.
    */
   public function report() {
-    foreach ($this->getRecipientsToReport() as $recipient) {
-      // Send reports...
+    $info = $this->getShortReadableStatus();
+    if ($this->getConfig()->get('use_logger')) {
+      $logger = \Drupal::logger('queue_watcher');
+      if (!empty($this->getCriticalQueueStates())) {
+        $logger->critical($info);
+      }
+      elseif (!empty($this->getWarningQueueStates())) {
+        $logger->warning($info);
+      }
+      else {
+        $logger->info($info);
+      }
+    }
+
+    $recipients = $this->getRecipientsToReport();
+    if (!empty($recipients)) {
+      $info = nl2br($this->getReadableStatus());
+      foreach ($recipients as $recipient) {
+        // TODO send the mails with the help of $this->getMailManager().
+      }
     }
   }
 
@@ -130,6 +162,59 @@ class QueueWatcher {
    */
   public function getLookupResult() {
     return $this->lookup_result;
+  }
+
+  /**
+   * Returns a user-readable summary of the current information the watcher has.
+   *
+   * @return string
+   *  A summary of the watcher's status information.
+   */
+  public function getReadableStatus() {
+    $info = '------------------------------------------------------' . "\n";
+    if ($this->foundProblems()) {
+      $info .= '.. ' .  t('The Queue Watcher has detected problematic queue states!') . ' ..' . "\n";
+    }
+    else {
+      $info .= '.. ' .  t('The Queue Watcher hasn\'t found any problematic queue states.') . ' ..' . "\n";
+    }
+    $info .= '------------------------------------------------------' . "\n";
+    foreach ($this->getLookupResult() as $states) {
+      foreach ($states as $state) {
+        $info .= t('Queue: @queue', ['@queue' => $state->getQueueName()]) . "\n";
+        $info .= t('Size (number of items): @num', ['@num' => $state->getNumberOfItems()]) . "\n";
+        $info .= t('State level: @level', ['@level' => $state->getStateLevel()]) . "\n";
+        $info .= '------------------------------------------------------' . "\n";
+      }
+    }
+    return $info;
+  }
+
+  /**
+   * Returns a short, user-readable status summary.
+   *
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   *  A brief summary of the watcher's status information.
+   */
+  public function getShortReadableStatus() {
+    $state_info = [];
+    foreach ($this->getLookupResult() as $states) {
+      foreach ($states as $state) {
+        $state_info[] = t('@queue is at @level state', ['@queue' => $state->getQueueName(), '@level' => $state->getStateLevel()]);
+      }
+    }
+
+    if (!empty($state_info)) {
+      if ($this->foundProblems()) {
+        return t('Problematic queues detected: @states.', ['@states' => implode(', ', $state_info)]);
+      }
+      else {
+        return t('Detected queue states: @states.', ['@states' => implode(', ', $state_info)]);
+      }
+    }
+    else {
+      return t('There are currently no queues to watch.');
+    }
   }
 
   /**
@@ -210,6 +295,13 @@ class QueueWatcher {
    */
   public function addRecipient($mail) {
     $this->recipients_to_report[$mail] = $mail;
+  }
+
+  /**
+   * Get the MailManager instance.
+   */
+  protected function getMailManager() {
+    return $this->mail_manager;
   }
 
   /**
