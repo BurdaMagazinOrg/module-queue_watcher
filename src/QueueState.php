@@ -15,10 +15,22 @@ class QueueState {
     $this->num_items = $num_items;
   }
 
+  /**
+   * Get the machine name of the corresponding queue.
+   *
+   * @return string
+   *  The queue machine name.
+   */
   public function getQueueName() {
     return $this->queue_name;
   }
 
+  /**
+   * Get the currently known number of items (size) of the queue.
+   *
+   * @return int
+   *  The queue size.
+   */
   public function getNumberOfItems() {
     return $this->num_items;
   }
@@ -29,12 +41,21 @@ class QueueState {
    * This task is usually taken care of by the QueueStateContainer.
    *
    * @return QueueState
+   *  The state object itself.
    */
   public function setNumberOfItems($num) {
     $this->num_items = $num;
     return $this;
   }
 
+  /**
+   * Get the queue state level.
+   *
+   * @return string
+   *   Can be either 'undefined', 'sane', 'warning' or 'critical'.
+   *   Queues which are not added to the watch list in the Queue Watcher config
+   *   cannot have a defined queue state.
+   */
   public function getStateLevel() {
     return $this->state_level;
   }
@@ -46,9 +67,13 @@ class QueueState {
    *
    * @param string $level
    *   The level of the state, can be 'sane', 'warning' or 'critical'.
+   *
+   * @return QueueState
+   *  The state object itself.
    */
   public function setStateLevel($level) {
     $this->state_level = $level;
+    return $this;
   }
 
   /**

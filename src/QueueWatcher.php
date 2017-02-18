@@ -106,7 +106,7 @@ class QueueWatcher {
     if (!empty($this->getWarningQueueStates()) || !empty($this->getCriticalQueueStates())) {
       return TRUE;
     }
-    if ($this->getConfig()->get('notify_undefined') && !empty($tis->getUndefinedQueueStates())) {
+    if ($this->getConfig()->get('notify_undefined') && !empty($this->getUndefinedQueueStates())) {
       return TRUE;
     }
     return FALSE;
@@ -116,7 +116,7 @@ class QueueWatcher {
    * Reports the current queue states to the configured recipients and logs.
    */
   public function report() {
-    foreach ($this->recipients_to_report as $recipient) {
+    foreach ($this->getRecipientsToReport() as $recipient) {
       // Send reports...
     }
   }

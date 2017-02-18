@@ -11,15 +11,6 @@ class QueueStateContainer {
    */
   protected $states;
 
-  protected function query() {
-    $query = \Drupal::database()
-      ->select('queue', 'q')
-      ->fields('q', ['name'])
-      ->groupBy('name');
-    $query->addExpression('COUNT(q.item_id)', 'num_items');
-    return $query;
-  }
-
   /**
    * Re-fetches the states for the currently known queues.
    *
@@ -103,5 +94,17 @@ class QueueStateContainer {
     if (!isset($this->states[$queue_name])) {
       $this->states[$queue_name] = new QueueState($queue_name, 0);
     }
+  }
+
+  /**
+   * Helper function to return a base query on the queue table.
+   */
+  protected function query() {
+    $query = \Drupal::database()
+      ->select('queue', 'q')
+      ->fields('q', ['name'])
+      ->groupBy('name');
+    $query->addExpression('COUNT(q.item_id)', 'num_items');
+    return $query;
   }
 }
