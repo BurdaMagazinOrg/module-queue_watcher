@@ -72,7 +72,7 @@ class QueueWatcher {
    *
    * @var TranslationInterface
    */
-  protected TranslationInterface $translationManager;
+  protected $translationManager;
 
   /**
    * QueueWatcher constructor method.
@@ -367,9 +367,9 @@ class QueueWatcher {
    * Sends a status mail to the given mail addresses.
    *
    * @param array $mail_addresses
-   *  (Optional) The recipient addresses to send the status mail.
-   *  By default, the configured and previously
-   *  given recipient addresses will be used.
+   *   (Optional) The recipient addresses to send the status mail.
+   *   By default, the configured and previously
+   *   given recipient addresses will be used.
    *
    * @see ::addRecipient()
    * @see ::getRecipientsToReport()

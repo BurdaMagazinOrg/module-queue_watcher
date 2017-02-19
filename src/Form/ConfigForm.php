@@ -11,6 +11,9 @@ use Drupal\Component\Utility\Html;
  * Class for the Queue Watcher configuration form.
  */
 class ConfigForm extends ConfigFormBase {
+  /**
+   * Get the form id.
+   */
   public function getFormId() {
     return 'queue_watcher_config_form';
   }
@@ -130,7 +133,7 @@ class ConfigForm extends ConfigFormBase {
       '#maxlength' => 255,
       '#title' => $this->t('The default size limit as a critical, maximum allowed number of items'),
       '#default_value' => $default_queue_settings['size_limit_critical'],
-      '#description' => $this->t('Leave it empty if you don\'t have a critical limit. Writes an error in the log (if writing into system log is activated above).'),
+      '#description' => $this->t("Leave it empty if you don't have a critical limit. Writes an error in the log (if writing into system log is activated above)."),
       '#weight' => 20,
     ];
     $form['undefined_queue_settings']['notify_undefined'] = [
@@ -190,7 +193,11 @@ class ConfigForm extends ConfigFormBase {
    * Helper function to add a new queue item to the form.
    */
   public function addNewQueueItem(array &$form, FormStateInterface $form_state) {
-    $new = ['queue_name' => '', 'size_limit_warning' => '', 'size_limit_critical' => ''];
+    $new = [
+      'queue_name' => '',
+      'size_limit_warning' => '',
+      'size_limit_critical' => '',
+    ];
 
     // Synchronize the state of the given form values with the config object.
     $config = $this->config('queue_watcher.config');
@@ -253,7 +260,7 @@ class ConfigForm extends ConfigFormBase {
       '#maxlength' => 255,
       '#title' => $this->t('The size limit as a critical, maximum allowed number of items'),
       '#default_value' => $queue_to_watch['size_limit_critical'],
-      '#description' => $this->t('Leave it empty if you don\'t have a critical limit. Writes an error in the log (if writing into system log is activated above).'),
+      '#description' => $this->t("Leave it empty if you don\'t have a critical limit. Writes an error in the log (if writing into system log is activated above)."),
       '#weight' => 30,
     ];
 
