@@ -2,7 +2,8 @@
 
 namespace Drupal\queue_watcher;
 
-use \Drupal\Core\Mail\MailManager;
+use \Psr\Log\LoggerInterface;
+use \Drupal\Core\Mail\MailManagerInterface;
 
 /**
  * The QueueWatcher class.
@@ -35,20 +36,32 @@ class QueueWatcher {
   protected $lookup_result;
 
   /**
-   * @var MailManager
+   * @var LoggerInterface
+   */
+  protected $logger;
+
+  /**
+   * @var MailManagerInterface
    */
   protected $mail_manager;
 
   /**
+   * $var string
+   */
+  protected $current_langcode;
+
+  /**
    * @param QueueStateContainer $state_container
    *   The QueueStateContainer instance.
-   * @param MailManager $mail_manager
+   * @param MailManagerInterface $mail_manager
    *   The mail manager.
    */
-  public function __construct(QueueStateContainer $state_container, MailManager $mail_manager) {
+  public function __construct(QueueStateContainer $state_container, MailManagerInterface $mail_manager) {
     $this->config = \Drupal::config('queue_watcher.config');
+    $this->logger = \Drupal::logger('queue_watcher');
     $this->state_container = $state_container;
     $this->mail_manager = $mail_manager;
+    $this->current_langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
     $this->initQueuesToWatch();
     $this->initRecipientsToReport();
     $this->initLookupResult();
@@ -81,6 +94,7 @@ class QueueWatcher {
     foreach ($this->queues_to_watch as $queue_name => $defined) {
       if (empty($states[$queue_name])) {
         $this->getStateContainer()->addEmptyState($queue_name);
+        $states[$queue_name] = $this->getStateContainer()->getState($queue_name);
       }
       $state = $states[$queue_name];
       if ($state->exceeds($defined['size_limit_critical'])) {
@@ -130,27 +144,11 @@ class QueueWatcher {
    * Reports the current queue states to the configured recipients and logs.
    */
   public function report() {
-    $info = $this->getShortReadableStatus();
     if ($this->getConfig()->get('use_logger')) {
-      $logger = \Drupal::logger('queue_watcher');
-      if (!empty($this->getCriticalQueueStates())) {
-        $logger->critical($info);
-      }
-      elseif (!empty($this->getWarningQueueStates())) {
-        $logger->warning($info);
-      }
-      else {
-        $logger->info($info);
-      }
+      $this->logStatus($this->logger());
     }
 
-    $recipients = $this->getRecipientsToReport();
-    if (!empty($recipients)) {
-      $info = nl2br($this->getReadableStatus());
-      foreach ($recipients as $recipient) {
-        // TODO send the mails with the help of $this->getMailManager().
-      }
-    }
+    $this->mailStatus($this->getRecipientsToReport());
   }
 
   /**
@@ -167,10 +165,17 @@ class QueueWatcher {
   /**
    * Returns a user-readable summary of the current information the watcher has.
    *
+   * @param $langcode
+   *  (Optional) The desired language translation code of the summary.
+   *
    * @return string
    *  A summary of the watcher's status information.
    */
-  public function getReadableStatus() {
+  public function getReadableStatus($langcode = NULL) {
+    if (!isset($langcode)) {
+      $langcode = $this->current_langcode;
+    }
+
     $info = '------------------------------------------------------' . "\n";
     if ($this->foundProblems()) {
       $info .= '.. ' .  t('The Queue Watcher has detected problematic queue states!') . ' ..' . "\n";
@@ -193,27 +198,36 @@ class QueueWatcher {
   /**
    * Returns a short, user-readable status summary.
    *
+   * @param $langcode
+   *  (Optional) The desired language translation code of the summary.
+   *
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
    *  A brief summary of the watcher's status information.
    */
-  public function getShortReadableStatus() {
+  public function getShortReadableStatus($langcode = NULL) {
+    if (!isset($langcode)) {
+      $langcode = $this->current_langcode;
+    }
+
     $state_info = [];
+    $options = ['langcode' => $langcode];
     foreach ($this->getLookupResult() as $states) {
       foreach ($states as $state) {
-        $state_info[] = t('@queue is at @level state', ['@queue' => $state->getQueueName(), '@level' => $state->getStateLevel()]);
+        $args = ['@queue' => $state->getQueueName(), '@level' => $state->getStateLevel()];
+        $state_info[] = t('@queue is at @level state', $args, $options);
       }
     }
 
     if (!empty($state_info)) {
       if ($this->foundProblems()) {
-        return t('Problematic queues detected: @states.', ['@states' => implode(', ', $state_info)]);
+        return t('Problematic queues detected: @states.', ['@states' => implode(', ', $state_info)], $options);
       }
       else {
-        return t('Detected queue states: @states.', ['@states' => implode(', ', $state_info)]);
+        return t('Detected queue states: @states.', ['@states' => implode(', ', $state_info)], $options);
       }
     }
     else {
-      return t('There are currently no queues to watch.');
+      return t('There are currently no queues to watch.', [], $options);
     }
   }
 
@@ -281,6 +295,9 @@ class QueueWatcher {
   /**
    * Returns a list of all recipient mail addresses,
    * which will be notified by calling ::report().
+   *
+   * @return array
+   *  The list of recipient mail addresses as strings.
    */
   public function getRecipientsToReport() {
     return $this->recipients_to_report;
@@ -297,8 +314,83 @@ class QueueWatcher {
     $this->recipients_to_report[$mail] = $mail;
   }
 
+
   /**
-   * Get the MailManager instance.
+   * Logs the current status information.
+   *
+   * @param LoggerInterface $logger
+   *  (Optional) A specific logger channel instance.
+   *  By default, the Queue Watcher channel will be used.
+   */
+  public function logStatus(LoggerInterface $logger = NULL) {
+    if (!isset($logger)) {
+      $logger = $this->logger();
+    }
+
+    $info = $this->getShortReadableStatus();
+    if (!empty($this->getCriticalQueueStates())) {
+      $logger->critical($info);
+    }
+    elseif (!empty($this->getWarningQueueStates())) {
+      $logger->warning($info);
+    }
+    else {
+      $logger->info($info);
+    }
+  }
+
+  /**
+   * Sends a status mail to the given mail addresses.
+   *
+   * @param array $mail_addresses
+   *  (Optional) The recipient addresses to send the status mail.
+   *  By default, the configured and previously
+   *  given recipient addresses will be used.
+   *
+   * @see ::addRecipient()
+   * @see ::getRecipientsToReport()
+   */
+  public function mailStatus(array $mail_addresses = []) {
+    if (empty($mail_addresses)) {
+      $mail_addresses = $this->getRecipientsToReport();
+    }
+
+    if (!empty($mail_addresses)) {
+      // TODO Find a way to determine appropriate translations.
+      $langcode = $this->current_langcode;
+      $overall = $this->foundProblems() ? t('Problematic') : t('No problems');
+      if (!empty($this->getCriticalQueueStates())) {
+        $overall = t('Critical');
+      }
+      $site = \Drupal::config('system.site')->get('name');
+
+      $prepared_subject = t('@overall - Queue Watcher status report from @site',
+        ['@overall' => $overall, '@site' => $site], ['langcode' => $langcode]);
+      $prepared_info = nl2br($this->getReadableStatus($langcode));
+      $params = [
+        'prepared_subject' => $prepared_subject,
+        'prepared_status_info' => $prepared_info,
+        'watcher_instance' => $this,
+      ];
+      foreach ($mail_addresses as $mail_address) {
+        $this->getMailManager()->mail('queue_watcher', 'status', $mail_address, $langcode, $params);
+      }
+    }
+  }
+
+  /**
+   * Get the corresponding logger instance.
+   *
+   * @return LoggerInterface
+   */
+  protected function logger() {
+    return $this->logger;
+  }
+
+  /**
+   * Get the MailManagerInterface instance.
+   *
+   * @return MailManagerInterface
    */
   protected function getMailManager() {
     return $this->mail_manager;

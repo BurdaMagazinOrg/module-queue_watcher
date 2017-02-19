@@ -20,11 +20,11 @@ function queue_watcher_drush_command() {
     'description' => dt('Performs a lookup and shows information about given and configured queues. Example: $ drush queue-watcher-lookup my_queue another_queue --report-problems'),
     'core' => ['8+'],
     'arguments' => [
-      'queue' => dt('(Optional) The machine name of the queue(s) you want to be watched, even when it\'s empty or not configured.'),
+      'queue' => dt('(Optional) The machine name of the queue(s) you want to be watched, even when the queue is empty or not configured.'),
     ],
     'options' => [
       'report-problems' => dt('Set this option to send reports about found problems to the configured recipient addresses. By default, the lookup command won\'t send reports.'),
-      'recipient' => dt('Specifies an extra recipient address to send reports about problems (if enabled with --report-problems). You can also persistently setup recipient addresses in the Queue Watcher configuration.'),
+      'recipient' => dt('Specifies an extra recipient mail address to send reports about problems (if enabled with --report-problems). Multiple mail addresses are to be separated by \', \'. You can also persistently setup recipient addresses in the Queue Watcher configuration.'),
       'quiet' => dt('Set this option to perform a quiet lookup, i.e. no console output.'),
     ],
   ];
@@ -64,9 +64,14 @@ function drush_queue_watcher_lookup() {
   // Send reports when problems have been found.
   if ($report_problems && $watcher->foundProblems()) {
     if (!empty($recipient)) {
-      $watcher->addRecipient($recipient);
+      $mail_addresses = explode(', ', $recipient);
+      foreach ($mail_addresses as $mail_address) {
+        $watcher->addRecipient($mail_address);
+      }
     }
+
     $watcher->report();
+
     if (!$quiet) {
       drush_print('------------------------------------------------------');
       drush_print(dt('The summary above has just been sent to the configured recipients.'));

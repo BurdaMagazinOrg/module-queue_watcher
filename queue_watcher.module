@@ -16,3 +16,15 @@ function queue_watcher_cron() {
     $watcher->report();
   }
 }
+
+/**
+ * Implements hook_mail().
+ */
+function queue_watcher_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'status':
+      $message['subject'] = $params['prepared_subject'];
+      $message['body'][] = $params['prepared_status_info'];
+      break;
+  }
+}

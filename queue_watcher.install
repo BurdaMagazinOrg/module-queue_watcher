@@ -2,5 +2,30 @@
 
 /**
  * @file
- * Install, update and uninstall functions for the queue_watcher module.
+ * Queue Watcher install file.
  */
+
+/**
+ * Implements hook_requirements().
+ */
+function queue_watcher_requirements($phase) {
+  $requirements = [];
+
+  if ($phase == 'runtime') {
+    /** @var \Drupal\queue_watcher\QueueWatcher $watcher **/
+    $watcher = \Drupal::service('queue_watcher');
+    $watcher->lookup();
+    $severity = $watcher->foundProblems() ? REQUIREMENT_WARNING : REQUIREMENT_OK;
+    if (!empty($watcher->getCriticalQueueStates())) {
+      $severity = REQUIREMENT_ERROR;
+    }
+
+    $requirements['queue_watcher'] = [
+      'title' => t('Queue Watcher'),
+      'value' => $watcher->getShortReadableStatus(),
+      'severity' => $severity,
+    ];
+  }
+
+  return $requirements;
+}
