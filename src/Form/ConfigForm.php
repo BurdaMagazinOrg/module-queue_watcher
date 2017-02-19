@@ -91,7 +91,7 @@ class ConfigForm extends ConfigFormBase {
       '#tree' => FALSE,
       '#type' => 'button',
       '#name' => 'add_new_queue_item',
-      '#value' => t('Add another item'),
+      '#value' => $this->t('Add another item'),
       '#weight' => $num_queue_items * 100,
       '#ajax' => [
         'callback' => [$this, 'addNewQueueItem'],
@@ -100,7 +100,7 @@ class ConfigForm extends ConfigFormBase {
         'method' => 'before',
         'progress' => [
           'type' => 'throbber',
-          'message' => t('Loading settings...'),
+          'message' => $this->t('Loading settings...'),
         ],
       ],
     ];
@@ -273,14 +273,14 @@ class ConfigForm extends ConfigFormBase {
     $form['watch_queues'][$i]['remove'] = [
       '#type' => 'button',
       '#name' => 'remove_queue_item_' . $i,
-      '#value' => t('Remove this item'),
+      '#value' => $this->t('Remove this item'),
       '#ajax' => [
         'callback' => [$this, 'removeQueueItem'],
         'wrapper' => $id,
         'effect' => 'fade',
         'progress' => [
           'type' => 'throbber',
-          'message' => t('Removing...'),
+          'message' => $this->t('Removing...'),
         ],
       ],
       '#weight' => 100,
