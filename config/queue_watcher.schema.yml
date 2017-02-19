@@ -19,7 +19,17 @@ queue_watcher.config:
           label: 'Mail recipient'
     notify_undefined:
       type: boolean
-      label: 'Notify about queues which are not added to the watch list yet.'
+      label: 'Report queues as problematic, whose states are not yet defined by this configuration.'
+    default_queue_settings:
+      type: mapping
+      label: 'Default settings for queues missing in the watch list'
+      mapping:
+        size_limit_warning:
+          type: integer
+          label: 'The default size limit as a valid, but undesired number of items'
+        size_limit_critical:
+          type: integer
+          label: 'The default size limit as a critical, maximum allowed number of items'
     watch_queues:
       type: sequence
       label: 'Queues to watch'
@@ -32,7 +42,7 @@ queue_watcher.config:
             label: 'Queue machine name'
           size_limit_warning:
             type: integer
-            label: 'The size limit as a valid, but undesired number of items.'
+            label: 'The size limit as a valid, but undesired number of items'
           size_limit_critical:
             type: integer
             label: 'The size limit as a critical, maximum allowed number of items'

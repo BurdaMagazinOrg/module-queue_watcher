@@ -91,36 +91,19 @@ class QueueWatcher {
    */
   public function lookup() {
     $states = $this->getStateContainer()->getAllStates();
-    foreach ($this->queues_to_watch as $queue_name => $defined) {
+    foreach ($this->queues_to_watch as $queue_name => $settings) {
       if (empty($states[$queue_name])) {
         $this->getStateContainer()->addEmptyState($queue_name);
         $states[$queue_name] = $this->getStateContainer()->getState($queue_name);
       }
       $state = $states[$queue_name];
-      if ($state->exceeds($defined['size_limit_critical'])) {
-        $state->setStateLevel('critical');
-        $this->lookup_result['critical'][$queue_name] = $state;
-        unset($this->lookup_result['warning'][$queue_name]);
-        unset($this->lookup_result['sane'][$queue_name]);
-      }
-      elseif ($state->exceeds($defined['size_limit_warning'])) {
-        $state->setStateLevel('warning');
-        unset($this->lookup_result['critical'][$queue_name]);
-        $this->lookup_result['warning'][$queue_name] = $state;
-        unset($this->lookup_result['sane'][$queue_name]);
-      }
-      else {
-        $state->setStateLevel('sane');
-        unset($this->lookup_result['critical'][$queue_name]);
-        unset($this->lookup_result['warning'][$queue_name]);
-        $this->lookup_result['sane'][$queue_name] = $state;
-      }
+      $this->classifyStateLevel($state);
       unset($states[$queue_name]);
     }
     // Add the states of queues,
     // which are not added (yet) in the Queue Watcher configuration.
     foreach ($states as $queue_name => $not_configured) {
-      $this->lookup_result['undefined'][$queue_name] = $not_configured;
+      $this->classifyStateLevel($not_configured);
     }
   }
 
@@ -379,6 +362,39 @@ class QueueWatcher {
   }
 
   /**
+   * Classifies the state level of a given queue state.
+   */
+  protected function classifyStateLevel(QueueState $state) {
+    $queue_name = $state->getQueueName();
+    $settings = !empty($this->queues_to_watch[$queue_name]) ?
+      $this->queues_to_watch[$queue_name] : $this->getConfig()->get('default_queue_settings');
+    $warning_limit = $settings['size_limit_warning'];
+    $critical_limit = $settings['size_limit_critical'];
+
+    if (is_numeric($critical_limit) && $state->exceeds($critical_limit)) {
+      $state->setStateLevel('critical');
+      $this->lookup_result['critical'][$queue_name] = $state;
+      unset($this->lookup_result['warning'][$queue_name]);
+      unset($this->lookup_result['sane'][$queue_name]);
+    }
+    elseif (is_numeric($warning_limit) && $state->exceeds($warning_limit)) {
+      $state->setStateLevel('warning');
+      unset($this->lookup_result['critical'][$queue_name]);
+      $this->lookup_result['warning'][$queue_name] = $state;
+      unset($this->lookup_result['sane'][$queue_name]);
+    }
+    elseif (is_numeric($critical_limit) || is_numeric($warning_limit)) {
+      $state->setStateLevel('sane');
+      unset($this->lookup_result['critical'][$queue_name]);
+      unset($this->lookup_result['warning'][$queue_name]);
+      $this->lookup_result['sane'][$queue_name] = $state;
+    }
+    else {
+      $this->lookup_result['undefined'][$queue_name] = $state;
+    }
+  }
+
+  /**
    * Get the corresponding logger instance.
    *
    * @return LoggerInterface
@@ -401,10 +417,13 @@ class QueueWatcher {
    */
   protected function initQueuesToWatch() {
     $to_watch = [];
-    foreach ($this->getConfig()->get('watch_queues') as $watch_item) {
-      if (!empty($watch_item['queue_name'])) {
-        $name = $watch_item['queue_name'];
-        $to_watch[$name] = $watch_item;
+    $default = $this->getConfig()->get('default_queue_settings');
+    foreach ($this->getConfig()->get('watch_queues') as $defined) {
+      if (!empty($defined['queue_name'])) {
+        $name = $defined['queue_name'];
+        $defined['size_limit_warning'] = !empty($defined['size_limit_warning']) ? $defined['size_limit_warning'] : $default['size_limit_warning'];
+        $defined['size_limit_critical'] = !empty($defined['size_limit_critical']) ? $defined['size_limit_critical'] : $default['size_limit_critical'];
+        $to_watch[$name] = $defined;
       }
     }
     $this->queues_to_watch = $to_watch;

@@ -53,13 +53,6 @@ class ConfigForm extends ConfigFormBase {
       '#weight' => 30,
     ];
 
-    $form['targets']['notify_undefined'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Notify about queues which are not added to the watch list yet.'),
-      '#default_value' => $config->get('notify_undefined'),
-      '#weight' => 40,
-    ];
-
     $form['targets']['mail_recipients'] = [
       '#type' => 'textfield',
       '#maxlength' => 255,
@@ -107,6 +100,39 @@ class ConfigForm extends ConfigFormBase {
       $this->addQueueItem($form, $form_state, $queue_to_watch);
     }
 
+    $form['undefined_queue_settings'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Default settings for queues missing in the watch list'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#tree' => FALSE,
+      '#weight' => 30,
+    ];
+    $default_queue_settings = $config->get('default_queue_settings');
+    $form['undefined_queue_settings']['size_limit_warning'] = [
+      '#type' => 'textfield',
+      '#maxlength' => 255,
+      '#title' => $this->t('The default size limit as a valid, but undesired number of items'),
+      '#default_value' => $default_queue_settings['size_limit_warning'],
+      '#description' => $this->t('Leave it empty if you don\'t have an undesired limit. May be useful if you want to have a buffer for preparing performance optimisations. Writes a warning in the log (if writing into system log is activated above).'),
+      '#weight' => 10,
+    ];
+    $form['undefined_queue_settings']['size_limit_critical'] = [
+      '#type' => 'textfield',
+      '#maxlength' => 255,
+      '#title' => $this->t('The default size limit as a critical, maximum allowed number of items'),
+      '#default_value' => $default_queue_settings['size_limit_critical'],
+      '#description' => $this->t('Leave it empty if you don\'t have a critical limit. Writes an error in the log (if writing into system log is activated above).'),
+      '#weight' => 20,
+    ];
+    $form['undefined_queue_settings']['notify_undefined'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Report queues as problematic, whose states are not yet defined by this configuration.'),
+      '#description' => $this->t('When there is no limit specified regarding a warning or a critical state, the given queue will be assigned with an undefined state level. Queues always have a defined state, when the above fields for default size limits are not empty.'),
+      '#default_value' => $config->get('notify_undefined'),
+      '#weight' => 30,
+    ];
+
     $form['actions']['#weight'] = 100;
 
     return $form;
@@ -122,6 +148,13 @@ class ConfigForm extends ConfigFormBase {
     $config->set('use_admin_mail', (bool) $values['use_admin_mail']);
     $config->set('notify_undefined', (bool) $values['notify_undefined']);
     $config->set('mail_recipients', $values['mail_recipients']);
+
+    // Default queue settings.
+    $default_queue_settings = [
+      'size_limit_warning' => $values['size_limit_warning'],
+      'size_limit_critical' => $values['size_limit_critical'],
+    ];
+    $config->set('default_queue_settings', $default_queue_settings);
 
     foreach ($values['watch_queues'] as $index => $item) {
       // Remove marked items.
@@ -175,7 +208,7 @@ class ConfigForm extends ConfigFormBase {
     $queues = $form_state->getValue('watch_queues', []);
     $to_remove = !empty($queues[$i]['to_remove']) ? $queues[$i]['to_remove'] : 0;
 
-    $id = Html::getUniqueId('edit-queue-item-' . $index);
+    $id = Html::getUniqueId('edit-queue-item-' . $i);
     $form['watch_queues'][$i] = [
         '#type' => 'fieldset',
         '#title' => $this->t('#@num Queue to watch', ['@num' => $i]),

@@ -4,5 +4,8 @@ use_site_mail: false
 use_admin_mail: true
 notify_undefined: false
 mail_recipients: ''
+default_queue_settings:
+  size_limit_warning: 1000
+  size_limit_critical: 10000
 watch_queues:
   - { queue_name: '', size_limit_warning: '', size_limit_critical: '' }
