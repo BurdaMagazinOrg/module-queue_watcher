@@ -11,6 +11,7 @@ use Drupal\Component\Utility\Html;
  * Class for the Queue Watcher configuration form.
  */
 class ConfigForm extends ConfigFormBase {
+
   /**
    * Get the form id.
    */
