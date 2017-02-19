@@ -8,17 +8,23 @@ use Drupal\Core\Render\Element\StatusMessages;
 use Drupal\Component\Utility\Html;
 
 /**
- * Class for the Queue Watcher configuration form. 
+ * Class for the Queue Watcher configuration form.
  */
 class ConfigForm extends ConfigFormBase {
   public function getFormId() {
     return 'queue_watcher_config_form';
   }
 
+  /**
+   * Get the editable config names.
+   */
   protected function getEditableConfigNames() {
     return ['queue_watcher.config'];
   }
 
+  /**
+   * The Form builder implementation.
+   */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildForm($form, $form_state);
     $config = $this->config('queue_watcher.config');
@@ -34,7 +40,7 @@ class ConfigForm extends ConfigFormBase {
 
     $form['targets']['use_logger'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Write occurences into the system log.'),
+      '#title' => $this->t('Write occurrences into the system log.'),
       '#default_value' => $config->get('use_logger'),
       '#weight' => 10,
     ];
@@ -95,7 +101,9 @@ class ConfigForm extends ConfigFormBase {
       ],
     ];
 
-    $form_state->setValue('watch_queues_index', 1); // Reset the index counter.
+    // Reset the index counter.
+    $form_state->setValue('watch_queues_index', 1);
+
     foreach ($config->get('watch_queues') as $queue_to_watch) {
       $this->addQueueItem($form, $form_state, $queue_to_watch);
     }
@@ -114,7 +122,7 @@ class ConfigForm extends ConfigFormBase {
       '#maxlength' => 255,
       '#title' => $this->t('The default size limit as a valid, but undesired number of items'),
       '#default_value' => $default_queue_settings['size_limit_warning'],
-      '#description' => $this->t('Leave it empty if you don\'t have an undesired limit. May be useful if you want to have a buffer for preparing performance optimisations. Writes a warning in the log (if writing into system log is activated above).'),
+      '#description' => $this->t("Leave it empty if you don't have an undesired limit. May be useful if you want to have a buffer for preparing performance optimizations. Writes a warning in the log (if writing into system log is activated above)."),
       '#weight' => 10,
     ];
     $form['undefined_queue_settings']['size_limit_critical'] = [
@@ -138,6 +146,9 @@ class ConfigForm extends ConfigFormBase {
     return $form;
   }
 
+  /**
+   * Submit handler callback for the Queue Watcher config form.
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('queue_watcher.config');
 
@@ -175,6 +186,9 @@ class ConfigForm extends ConfigFormBase {
     parent::submitForm($form, $form_state);
   }
 
+  /**
+   * Helper function to add a new queue item to the form.
+   */
   public function addNewQueueItem(array &$form, FormStateInterface $form_state) {
     $new = ['queue_name' => '', 'size_limit_warning' => '', 'size_limit_critical' => ''];
 
@@ -196,7 +210,7 @@ class ConfigForm extends ConfigFormBase {
   protected function addQueueItem(&$form, $form_state, $queue_to_watch) {
     $i = $form_state->getValue('watch_queues_index', 1);
     // Get an index which isn't being used yet.
-    while (true) {
+    while (TRUE) {
       if (empty($form['watch_queues'][$i])) {
         break;
       }
@@ -210,63 +224,66 @@ class ConfigForm extends ConfigFormBase {
 
     $id = Html::getUniqueId('edit-queue-item-' . $i);
     $form['watch_queues'][$i] = [
-        '#type' => 'fieldset',
-        '#title' => $this->t('#@num Queue to watch', ['@num' => $i]),
-        '#collapsible' => FALSE,
-        '#collapsed' => FALSE,
-        '#tree' => TRUE,
-        '#weight' => $i * 10,
-        '#attributes' => ['id' => $id],
-      ];
-      $form['watch_queues'][$i]['queue_name'] = [
-        '#type' => 'textfield',
-        '#maxlength' => 255,
-        '#title' => $this->t('Queue machine name'),
-        '#default_value' => $queue_to_watch['queue_name'],
-        '#required' => $to_remove ? FALSE : TRUE,
-        '#weight' => 10,
-      ];
-      $form['watch_queues'][$i]['size_limit_warning'] = [
-        '#type' => 'textfield',
-        '#maxlength' => 255,
-        '#title' => $this->t('The size limit as a valid, but undesired number of items'),
-        '#default_value' => $queue_to_watch['size_limit_warning'],
-        '#description' => $this->t('Leave it empty if you don\'t have an undesired limit. May be useful if you want to have a buffer for preparing performance optimisations. Writes a warning in the log (if writing into system log is activated above).'),
-        '#weight' => 20,
-      ];
-      $form['watch_queues'][$i]['size_limit_critical'] = [
-        '#type' => 'textfield',
-        '#maxlength' => 255,
-        '#title' => $this->t('The size limit as a critical, maximum allowed number of items'),
-        '#default_value' => $queue_to_watch['size_limit_critical'],
-        '#description' => $this->t('Leave it empty if you don\'t have a critical limit. Writes an error in the log (if writing into system log is activated above).'),
-        '#weight' => 30,
-      ];
+      '#type' => 'fieldset',
+      '#title' => $this->t('#@num Queue to watch', ['@num' => $i]),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#tree' => TRUE,
+      '#weight' => $i * 10,
+      '#attributes' => ['id' => $id],
+    ];
+    $form['watch_queues'][$i]['queue_name'] = [
+      '#type' => 'textfield',
+      '#maxlength' => 255,
+      '#title' => $this->t('Queue machine name'),
+      '#default_value' => $queue_to_watch['queue_name'],
+      '#required' => $to_remove ? FALSE : TRUE,
+      '#weight' => 10,
+    ];
+    $form['watch_queues'][$i]['size_limit_warning'] = [
+      '#type' => 'textfield',
+      '#maxlength' => 255,
+      '#title' => $this->t('The size limit as a valid, but undesired number of items'),
+      '#default_value' => $queue_to_watch['size_limit_warning'],
+      '#description' => $this->t("Leave it empty if you don't have an undesired limit. May be useful if you want to have a buffer for preparing performance optimisations. Writes a warning in the log (if writing into system log is activated above)."),
+      '#weight' => 20,
+    ];
+    $form['watch_queues'][$i]['size_limit_critical'] = [
+      '#type' => 'textfield',
+      '#maxlength' => 255,
+      '#title' => $this->t('The size limit as a critical, maximum allowed number of items'),
+      '#default_value' => $queue_to_watch['size_limit_critical'],
+      '#description' => $this->t('Leave it empty if you don\'t have a critical limit. Writes an error in the log (if writing into system log is activated above).'),
+      '#weight' => 30,
+    ];
 
-      // Find out whether this item is marked to be removed.
-      $form['watch_queues'][$i]['to_remove'] = [
-        '#type' => 'value',
-        '#value' => $to_remove,
-      ];
-      $form['watch_queues'][$i]['remove'] = [
-        '#type' => 'button',
-        '#name' => 'remove_queue_item_' . $i,
-        '#value' => t('Remove this item'),
-        '#ajax' => [
-          'callback' => [$this, 'removeQueueItem'],
-          'wrapper' => $id,
-          'effect' => 'fade',
-          'progress' => [
-            'type' => 'throbber',
-            'message' => t('Removing...'),
-          ],
+    // Find out whether this item is marked to be removed.
+    $form['watch_queues'][$i]['to_remove'] = [
+      '#type' => 'value',
+      '#value' => $to_remove,
+    ];
+    $form['watch_queues'][$i]['remove'] = [
+      '#type' => 'button',
+      '#name' => 'remove_queue_item_' . $i,
+      '#value' => t('Remove this item'),
+      '#ajax' => [
+        'callback' => [$this, 'removeQueueItem'],
+        'wrapper' => $id,
+        'effect' => 'fade',
+        'progress' => [
+          'type' => 'throbber',
+          'message' => t('Removing...'),
         ],
-        '#weight' => 100,
-      ];
+      ],
+      '#weight' => 100,
+    ];
 
-      return $form['watch_queues'][$i];
+    return $form['watch_queues'][$i];
   }
 
+  /**
+   * Marks a queue item to be removed from the form.
+   */
   public function removeQueueItem(array &$form, FormStateInterface $form_state) {
     $trigger = $form_state->getTriggeringElement();
     $i = $trigger['#parents'][1];
@@ -284,15 +301,18 @@ class ConfigForm extends ConfigFormBase {
    * Helper function to rebuild the form when necessary.
    *
    * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
    * @param array &$old_form
    *   The old form build.
+   *
    * @return array
    *   The newly built form.
    */
-  protected function rebuild(FormStateInterface $form_state, &$old_form) {
+  protected function rebuild(FormStateInterface $form_state, array &$old_form) {
     $form_state->setRebuild();
     $form_builder = \Drupal::getContainer()->get('form_builder');
     $form = $form_builder->rebuildForm($this->getFormId(), $form_state, $old_form);
     return $form;
   }
+
 }

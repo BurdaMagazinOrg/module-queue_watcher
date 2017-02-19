@@ -6,33 +6,36 @@ namespace Drupal\queue_watcher;
  * Represents the current state of a queue.
  */
 class QueueState {
-  protected $queue_name;
-  protected $num_items;
-  protected $state_level = 'undefined';
+  protected $queueName;
+  protected $numItems;
+  protected $stateLevel = 'undefined';
 
+  /**
+   * QueueState constructor.
+   */
   public function __construct($queue_name, $num_items) {
-    $this->queue_name = $queue_name;
-    $this->num_items = $num_items;
+    $this->queueName = $queue_name;
+    $this->numItems = $num_items;
   }
 
   /**
    * Get the machine name of the corresponding queue.
    *
    * @return string
-   *  The queue machine name.
+   *   The queue machine name.
    */
   public function getQueueName() {
-    return $this->queue_name;
+    return $this->queueName;
   }
 
   /**
    * Get the currently known number of items (size) of the queue.
    *
    * @return int
-   *  The queue size.
+   *   The queue size.
    */
   public function getNumberOfItems() {
-    return $this->num_items;
+    return $this->numItems;
   }
 
   /**
@@ -41,10 +44,10 @@ class QueueState {
    * This task is usually taken care of by the QueueStateContainer.
    *
    * @return QueueState
-   *  The state object itself.
+   *   The state object itself.
    */
   public function setNumberOfItems($num) {
-    $this->num_items = $num;
+    $this->numItems = $num;
     return $this;
   }
 
@@ -57,7 +60,7 @@ class QueueState {
    *   cannot have a defined queue state.
    */
   public function getStateLevel() {
-    return $this->state_level;
+    return $this->stateLevel;
   }
 
   /**
@@ -69,24 +72,24 @@ class QueueState {
    *   The level of the state, can be 'sane', 'warning' or 'critical'.
    *
    * @return QueueState
-   *  The state object itself.
+   *   The state object itself.
    */
   public function setStateLevel($level) {
-    $this->state_level = $level;
+    $this->stateLevel = $level;
     return $this;
   }
 
   /**
-   * Checks whether the current state of the queue
-   * exceeds the given limit.
+   * Checks whether the current state of the queue exceeds the given limit.
    *
    * @param int $limit
-   *  The given limit as integer.
+   *   The given limit as integer.
    *
-   * @return boolean
-   *  TRUE if limit is exceeded, FALSE otherwise.
+   * @return bool
+   *   TRUE if limit is exceeded, FALSE otherwise.
    */
   public function exceeds($limit) {
     return ($this->getNumberOfItems() > $limit);
   }
+
 }

@@ -7,7 +7,9 @@ namespace Drupal\queue_watcher;
  */
 class QueueStateContainer {
   /**
-   * @var QueueState[] 
+   * The queue states being hold by this container.
+   *
+   * @var QueueState[]
    */
   protected $states;
 
@@ -18,8 +20,9 @@ class QueueStateContainer {
    *   When given, only the state of this queue will be refreshed.
    *
    * @return QueueStateContainer
+   *   The state container itself.
    */
-  public function refresh($state = NULL) {
+  public function refresh(QueueState $state = NULL) {
     $query = $this->query();
     if (isset($state)) {
       $name = $state->getQueueName();
@@ -58,6 +61,7 @@ class QueueStateContainer {
    * you might want to run ::refresh() before.
    *
    * @return QueueState
+   *   The known state of the given queue.
    */
   public function getState($queue_name) {
     if (!isset($this->states[$queue_name])) {
@@ -74,7 +78,7 @@ class QueueStateContainer {
    * while ::getState() can use in-memory caching once a state has been fetched.
    *
    * @return QueueState[]
-   *  An array of queue states, keyed by queue names.
+   *   An array of queue states, keyed by queue names.
    */
   public function getAllStates() {
     // No in-memory caching here,
@@ -88,7 +92,7 @@ class QueueStateContainer {
    * Adds an empty queue state, if isn't known yet.
    *
    * @param string $queue_name
-   *  The name of the queue to track the state.
+   *   The name of the queue to track the state.
    */
   public function addEmptyState($queue_name) {
     if (!isset($this->states[$queue_name])) {
@@ -107,4 +111,5 @@ class QueueStateContainer {
     $query->addExpression('COUNT(q.item_id)', 'num_items');
     return $query;
   }
+
 }

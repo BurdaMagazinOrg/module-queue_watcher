@@ -12,7 +12,7 @@ function queue_watcher_requirements($phase) {
   $requirements = [];
 
   if ($phase == 'runtime') {
-    /** @var \Drupal\queue_watcher\QueueWatcher $watcher **/
+    /* @var \Drupal\queue_watcher\QueueWatcher $watcher */
     $watcher = \Drupal::service('queue_watcher');
     $watcher->lookup();
     $severity = $watcher->foundProblems() ? REQUIREMENT_WARNING : REQUIREMENT_OK;

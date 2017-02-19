@@ -5,11 +5,6 @@
  * Drush commands for queue_watcher.
  */
 
-use \Drupal\Core\Queue\QueueInterface;
-use \Drupal\Core\Queue\QueueWorkerInterface;
-use \Drupal\Core\Queue\RequeueException;
-use \Drupal\Core\Queue\SuspendQueueException;
-
 /**
  * Implements hook_drush_command().
  */
@@ -43,11 +38,10 @@ function drush_queue_watcher_lookup() {
   $report_problems = drush_get_option('report-problems', FALSE);
   $recipient = drush_get_option('recipient', NULL);
 
-  /** @var \Drupal\queue_watcher\QueueWatcher $watcher **/
+  /* @var \Drupal\queue_watcher\QueueWatcher $watcher */
   $watcher = \Drupal::service('queue_watcher');
 
   // Explicitly add the queues, which are defined by the user.
-  $config = $watcher->getConfig();
   if (!empty($user_defined_queues)) {
     foreach ($user_defined_queues as $queue_name) {
       $watcher->getStateContainer()->addEmptyState($queue_name);

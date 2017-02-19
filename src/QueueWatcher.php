@@ -4,6 +4,7 @@ namespace Drupal\queue_watcher;
 
 use \Psr\Log\LoggerInterface;
 use \Drupal\Core\Mail\MailManagerInterface;
+use \Drupal\Core\StringTranslation\TranslationInterface;
 
 /**
  * The QueueWatcher class.
@@ -11,57 +12,83 @@ use \Drupal\Core\Mail\MailManagerInterface;
 class QueueWatcher {
 
   /**
+   * The corresponding Queue Watcher configuration.
+   *
    * @var \Drupal\Core\Config\ImmutableConfig
    */
   protected $config;
 
   /**
+   * A QueueStateContainer instance.
+   *
    * @var QueueStateContainer
    */
-  protected $state_container;
+  protected $stateContainer;
 
   /**
+   * The list of configured queues to watch.
+   *
    * @var array
    */
-  protected $queues_to_watch;
+  protected $queuesToWatch;
 
   /**
+   * The list of configured recipients to report.
+   *
    * @var array
    */
-  protected $recipients_to_report;
+  protected $recipientsToReport;
 
   /**
+   * The gathered result from ::lookup().
+   *
    * @var array
    */
-  protected $lookup_result;
+  protected $lookupResult;
 
   /**
+   * The Drupal logger instance using the queue_watcher channel.
+   *
    * @var LoggerInterface
    */
   protected $logger;
 
   /**
+   * The mail manager being used for sending mails.
+   *
    * @var MailManagerInterface
    */
-  protected $mail_manager;
+  protected $mailManager;
 
   /**
-   * $var string
+   * The currently used language code.
+   *
+   * @var string
    */
-  protected $current_langcode;
+  protected $currentLangcode;
 
   /**
+   * The translation manager for translating.
+   *
+   * @var TranslationInterface
+   */
+  protected TranslationInterface $translationManager;
+
+  /**
+   * QueueWatcher constructor method.
+   *
    * @param QueueStateContainer $state_container
    *   The QueueStateContainer instance.
    * @param MailManagerInterface $mail_manager
    *   The mail manager.
    */
-  public function __construct(QueueStateContainer $state_container, MailManagerInterface $mail_manager) {
+  public function __construct(QueueStateContainer $state_container, MailManagerInterface $mail_manager, TranslationInterface $translation_manager) {
     $this->config = \Drupal::config('queue_watcher.config');
     $this->logger = \Drupal::logger('queue_watcher');
-    $this->state_container = $state_container;
-    $this->mail_manager = $mail_manager;
-    $this->current_langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    $this->stateContainer = $state_container;
+    $this->mailManager = $mail_manager;
+    $this->translationManager = $translation_manager;
+    $this->currentLangcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
     $this->initQueuesToWatch();
     $this->initRecipientsToReport();
     $this->initLookupResult();
@@ -69,8 +96,9 @@ class QueueWatcher {
 
   /**
    * Get the Queue Watcher configuration.
-   * 
+   *
    * @return \Drupal\Core\Config\ImmutableConfig
+   *   The configuration object.
    */
   public function getConfig() {
     return $this->config;
@@ -80,18 +108,18 @@ class QueueWatcher {
    * Get the QueueStateContainer.
    *
    * @return QueueStateContainer
+   *   The state container.
    */
   public function getStateContainer() {
-    return $this->state_container;
+    return $this->stateContainer;
   }
 
   /**
-   * Performs a lookup on the queues,
-   * which are added in the Queue Watcher configuration.
+   * Performs a lookup on the current queue states.
    */
   public function lookup() {
     $states = $this->getStateContainer()->getAllStates();
-    foreach ($this->queues_to_watch as $queue_name => $settings) {
+    foreach ($this->queuesToWatch as $queue_name => $settings) {
       if (empty($states[$queue_name])) {
         $this->getStateContainer()->addEmptyState($queue_name);
         $states[$queue_name] = $this->getStateContainer()->getState($queue_name);
@@ -107,11 +135,11 @@ class QueueWatcher {
     }
   }
 
-  /** 
+  /**
    * Returns TRUE if the watcher found problems after a ::lookup().
    *
-   * @return boolean
-   *  TRUE if the watcher found problems, FALSE otherwise.
+   * @return bool
+   *   TRUE if the watcher found problems, FALSE otherwise.
    */
   public function foundProblems() {
     if (!empty($this->getWarningQueueStates()) || !empty($this->getCriticalQueueStates())) {
@@ -138,40 +166,40 @@ class QueueWatcher {
    * Returns the lookup result.
    *
    * @return array
-   *  An array of QueueStates,
-   *  which are keyed by 'sane', 'warning' and 'critical'.
+   *   An array of QueueStates,
+   *   which are keyed by 'sane', 'warning' and 'critical'.
    */
   public function getLookupResult() {
-    return $this->lookup_result;
+    return $this->lookupResult;
   }
 
   /**
    * Returns a user-readable summary of the current information the watcher has.
    *
-   * @param $langcode
-   *  (Optional) The desired language translation code of the summary.
+   * @param string $langcode
+   *   (Optional) The desired language translation code of the summary.
    *
    * @return string
-   *  A summary of the watcher's status information.
+   *   A summary of the watcher's status information.
    */
   public function getReadableStatus($langcode = NULL) {
     if (!isset($langcode)) {
-      $langcode = $this->current_langcode;
+      $langcode = $this->currentLangcode;
     }
 
     $info = '------------------------------------------------------' . "\n";
     if ($this->foundProblems()) {
-      $info .= '.. ' .  t('The Queue Watcher has detected problematic queue states!') . ' ..' . "\n";
+      $info .= $this->t(".. The Queue Watcher has detected problematic queue states! ..") . "\n";
     }
     else {
-      $info .= '.. ' .  t('The Queue Watcher hasn\'t found any problematic queue states.') . ' ..' . "\n";
+      $info .= $this->t(".. The Queue Watcher hasn't found any problematic queue states. ..") . "\n";
     }
     $info .= '------------------------------------------------------' . "\n";
     foreach ($this->getLookupResult() as $states) {
       foreach ($states as $state) {
-        $info .= t('Queue: @queue', ['@queue' => $state->getQueueName()]) . "\n";
-        $info .= t('Size (number of items): @num', ['@num' => $state->getNumberOfItems()]) . "\n";
-        $info .= t('State level: @level', ['@level' => $state->getStateLevel()]) . "\n";
+        $info .= $this->t('Queue: @queue', ['@queue' => $state->getQueueName()]) . "\n";
+        $info .= $this->t('Size (number of items): @num', ['@num' => $state->getNumberOfItems()]) . "\n";
+        $info .= $this->t('State level: @level', ['@level' => $state->getStateLevel()]) . "\n";
         $info .= '------------------------------------------------------' . "\n";
       }
     }
@@ -181,15 +209,15 @@ class QueueWatcher {
   /**
    * Returns a short, user-readable status summary.
    *
-   * @param $langcode
-   *  (Optional) The desired language translation code of the summary.
+   * @param string $langcode
+   *   (Optional) The desired language translation code of the summary.
    *
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
-   *  A brief summary of the watcher's status information.
+   *   A brief summary of the watcher's status information.
    */
   public function getShortReadableStatus($langcode = NULL) {
     if (!isset($langcode)) {
-      $langcode = $this->current_langcode;
+      $langcode = $this->currentLangcode;
     }
 
     $state_info = [];
@@ -197,48 +225,55 @@ class QueueWatcher {
     foreach ($this->getLookupResult() as $states) {
       foreach ($states as $state) {
         $args = ['@queue' => $state->getQueueName(), '@level' => $state->getStateLevel()];
-        $state_info[] = t('@queue is at @level state', $args, $options);
+        $state_info[] = $this->t('@queue is at @level state', $args, $options);
       }
     }
 
     if (!empty($state_info)) {
       if ($this->foundProblems()) {
-        return t('Problematic queues detected: @states.', ['@states' => implode(', ', $state_info)], $options);
+        return $this->t('Problematic queues detected: @states.', ['@states' => implode(', ', $state_info)], $options);
       }
       else {
-        return t('Detected queue states: @states.', ['@states' => implode(', ', $state_info)], $options);
+        return $this->t('Detected queue states: @states.', ['@states' => implode(', ', $state_info)], $options);
       }
     }
     else {
-      return t('There are currently no queues to watch.', [], $options);
+      return $this->t('There are currently no queues to watch.', [], $options);
     }
   }
 
   /**
-   * Returns the list of known states of queues,
-   * which are not exceeding any limits.
+   * Returns a list of known sane queue states.
+   *
+   * These known states are not exceeding any limits.
    *
    * @return QueueState[]
+   *   The list of sane queue states.
    */
   public function getSaneQueueStates() {
-    return $this->lookup_result['sane'];
+    return $this->lookupResult['sane'];
   }
 
   /**
-   * Returns the list of known states of queues,
+   * Returns a list of warning queue states.
+   *
+   * This list contains queue states,
    * which have exceeded the warning limit,
    * but currently do not exceed the critical limit.
    *
    * @see ::getCriticalQueueStates()
    *
    * @return QueueState[]
+   *   The list of warning queue states.
    */
   public function getWarningQueueStates() {
-    return $this->lookup_result['warning'];
+    return $this->lookupResult['warning'];
   }
 
   /**
-   * Returns the list of known states of queues,
+   * Returns a list of critical queue states.
+   *
+   * This is the list of known queue states,
    * which have exceeded the critical limit.
    *
    * The critical states are not found in the list of warning states,
@@ -247,63 +282,69 @@ class QueueWatcher {
    * @see ::getWarningQueueStates()
    *
    * @return QueueState[]
+   *   The list of critical queue states.
    */
   public function getCriticalQueueStates() {
-    return $this->lookup_result['critical'];
+    return $this->lookupResult['critical'];
   }
 
   /**
-   * Returns the list of known states of queues,
-   * which are not defined in the Queue Watcher configuration.
+   * Returns a list of undefined queue states.
+   *
+   * This is the list of known queue states,
+   * whose limits are not defined in the Queue Watcher configuration.
    *
    * @return QueueState[]
+   *   The list of undefined queue states.
    */
   public function getUndefinedQueueStates() {
-    return $this->lookup_result['undefined'];
+    return $this->lookupResult['undefined'];
   }
 
   /**
    * Returns the list with queues, which are to be watched.
    *
-   * @return array
-   *  An array of defined queues including limits, keyed by queue name.
+   * See the queue_watcher.schema.yml section 'watch_queues'
+   * for possible queue definition keys.
    *
-   * @see queue_watcher.schema.yml section 'watch_queues'
-   *  for possible queue definition keys.
+   * @return array
+   *   An array of defined queues including limits, keyed by queue name.
    */
   public function getQueuesToWatch() {
-    return $this->queues_to_watch;
+    return $this->queuesToWatch;
   }
 
   /**
-   * Returns a list of all recipient mail addresses,
-   * which will be notified by calling ::report().
+   * Returns a list of all recipient mail addresses.
+   *
+   * These recipients will be notified by calling ::report().
    *
    * @return array
-   *  The list of recipient mail addresses as strings.
+   *   The list of recipient mail addresses as strings.
    */
   public function getRecipientsToReport() {
-    return $this->recipients_to_report;
+    return $this->recipientsToReport;
   }
 
   /**
-   * Adds a further recipient address,
-   * if not yet defined in the Queue Watcher configuration.
+   * Adds a further recipient address.
+   *
+   * The address will be added,
+   * when it is not yet defined in the Queue Watcher configuration.
    *
    * @param string $mail
-   *  A valid E-Mail address.
+   *   A valid E-Mail address.
    */
   public function addRecipient($mail) {
-    $this->recipients_to_report[$mail] = $mail;
+    $this->recipientsToReport[$mail] = $mail;
   }
-
 
   /**
    * Logs the current status information.
    *
    * @param LoggerInterface $logger
-   *  (Optional) A specific logger channel instance.
-   *  By default, the Queue Watcher channel will be used.
+   *   (Optional) A specific logger channel instance.
+   *   By default, the Queue Watcher channel will be used.
    */
   public function logStatus(LoggerInterface $logger = NULL) {
     if (!isset($logger)) {
@@ -340,14 +381,14 @@ class QueueWatcher {
 
     if (!empty($mail_addresses)) {
       // TODO Find a way to determine appropriate translations.
-      $langcode = $this->current_langcode;
-      $overall = $this->foundProblems() ? t('Problematic') : t('No problems');
+      $langcode = $this->currentLangcode;
+      $overall = $this->foundProblems() ? $this->t('Problematic') : $this->t('No problems');
       if (!empty($this->getCriticalQueueStates())) {
-        $overall = t('Critical');
+        $overall = $this->t('Critical');
       }
       $site = \Drupal::config('system.site')->get('name');
 
-      $prepared_subject = t('@overall - Queue Watcher status report from @site',
+      $prepared_subject = $this->t('@overall - Queue Watcher status report from @site',
         ['@overall' => $overall, '@site' => $site], ['langcode' => $langcode]);
       $prepared_info = nl2br($this->getReadableStatus($langcode));
       $params = [
@@ -366,31 +407,31 @@ class QueueWatcher {
    */
   protected function classifyStateLevel(QueueState $state) {
     $queue_name = $state->getQueueName();
-    $settings = !empty($this->queues_to_watch[$queue_name]) ?
-      $this->queues_to_watch[$queue_name] : $this->getConfig()->get('default_queue_settings');
+    $settings = !empty($this->queuesToWatch[$queue_name]) ?
+      $this->queuesToWatch[$queue_name] : $this->getConfig()->get('default_queue_settings');
     $warning_limit = $settings['size_limit_warning'];
     $critical_limit = $settings['size_limit_critical'];
 
     if (is_numeric($critical_limit) && $state->exceeds($critical_limit)) {
       $state->setStateLevel('critical');
-      $this->lookup_result['critical'][$queue_name] = $state;
-      unset($this->lookup_result['warning'][$queue_name]);
-      unset($this->lookup_result['sane'][$queue_name]);
+      $this->lookupResult['critical'][$queue_name] = $state;
+      unset($this->lookupResult['warning'][$queue_name]);
+      unset($this->lookupResult['sane'][$queue_name]);
     }
     elseif (is_numeric($warning_limit) && $state->exceeds($warning_limit)) {
       $state->setStateLevel('warning');
-      unset($this->lookup_result['critical'][$queue_name]);
-      $this->lookup_result['warning'][$queue_name] = $state;
-      unset($this->lookup_result['sane'][$queue_name]);
+      unset($this->lookupResult['critical'][$queue_name]);
+      $this->lookupResult['warning'][$queue_name] = $state;
+      unset($this->lookupResult['sane'][$queue_name]);
     }
     elseif (is_numeric($critical_limit) || is_numeric($warning_limit)) {
       $state->setStateLevel('sane');
-      unset($this->lookup_result['critical'][$queue_name]);
-      unset($this->lookup_result['warning'][$queue_name]);
-      $this->lookup_result['sane'][$queue_name] = $state;
+      unset($this->lookupResult['critical'][$queue_name]);
+      unset($this->lookupResult['warning'][$queue_name]);
+      $this->lookupResult['sane'][$queue_name] = $state;
     }
     else {
-      $this->lookup_result['undefined'][$queue_name] = $state;
+      $this->lookupResult['undefined'][$queue_name] = $state;
     }
   }
 
@@ -398,6 +439,7 @@ class QueueWatcher {
    * Get the corresponding logger instance.
    *
    * @return LoggerInterface
+   *   The logger instance.
    */
   protected function logger() {
     return $this->logger;
@@ -407,9 +449,20 @@ class QueueWatcher {
    * Get the MailManagerInterface instance.
    *
    * @return MailManagerInterface
+   *   The mail manager instance.
    */
   protected function getMailManager() {
-    return $this->mail_manager;
+    return $this->mailManager;
+  }
+
+  /**
+   * Translation helper function.
+   *
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   *   Translatable markup.
+   */
+  protected function t($string, array $args = [], array $options = []) {
+    return $this->translationManager->translate($string, $args, $options);
   }
 
   /**
@@ -426,7 +479,7 @@ class QueueWatcher {
         $to_watch[$name] = $defined;
       }
     }
-    $this->queues_to_watch = $to_watch;
+    $this->queuesToWatch = $to_watch;
   }
 
   /**
@@ -449,13 +502,19 @@ class QueueWatcher {
         $recipients[$address] = $address;
       }
     }
-    $this->recipients_to_report = $recipients;
+    $this->recipientsToReport = $recipients;
   }
 
   /**
    * Initialize the lookup result structure.
    */
   protected function initLookupResult() {
-    $this->lookup_result = ['sane' => [], 'warning' => [], 'critical' => [], 'undefined' => [],];
+    $this->lookupResult = [
+      'sane' => [],
+      'warning' => [],
+      'critical' => [],
+      'undefined' => [],
+    ];
   }
+
 }

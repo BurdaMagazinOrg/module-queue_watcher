@@ -20,7 +20,8 @@ and the logging system in case of exceeded limits.
 The module also adds some Drush helper commands, e.g.
 <code>$ drush queue-watcher-lookup</code>
 
-.. to get a list of currently existent queues with their states and for optionally sending reports to the configured recipients (mails and/or logs).
+.. to get a list of currently existent queues with their states and for
+optionally sending reports to the configured recipients (mails and/or logs).
 
 Furthermore you can see a status summary of your queue states in the status report.
 
