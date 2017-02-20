@@ -21,7 +21,7 @@ class ConfigForm extends ConfigFormBase {
    *
    * @var FormBuilderInterface
    */
-  protected $form_builder;
+  protected $formBuilder;
 
   /**
    * {@inheritdoc}
@@ -38,7 +38,7 @@ class ConfigForm extends ConfigFormBase {
    */
   public function __construct(ConfigFactoryInterface $config_factory, FormBuilderInterface $form_builder) {
     parent::__construct($config_factory);
-    $this->form_builder = $form_builder;
+    $this->formBuilder = $form_builder;
   }
 
   /**
@@ -358,7 +358,7 @@ class ConfigForm extends ConfigFormBase {
    */
   protected function rebuild(FormStateInterface $form_state, array &$old_form) {
     $form_state->setRebuild();
-    $form = $this->form_builder
+    $form = $this->formBuilder
       ->rebuildForm($this->getFormId(), $form_state, $old_form);
     return $form;
   }
