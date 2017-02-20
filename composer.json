@@ -1,5 +1,5 @@
 {
-  "name": "mxhaupt/queue_watcher",
+  "name": "burdamagazinorg/queue_watcher",
   "description": "Automatically checks queues and sends reports in case of abnormal queue sizes.",
   "type": "drupal-module",
   "license": "GPL-2.0+",
