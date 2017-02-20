@@ -2,6 +2,10 @@
 
 namespace Drupal\queue_watcher\Form;
 
+use \Symfony\Component\DependencyInjection\ContainerInterface;
+
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\StatusMessages;
@@ -11,6 +15,31 @@ use Drupal\Component\Utility\Html;
  * Class for the Queue Watcher configuration form.
  */
 class ConfigForm extends ConfigFormBase {
+
+  /**
+   * The FormBuilderInterface object.
+   *
+   * @var FormBuilderInterface
+   */
+  protected $form_builder;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('form_builder')
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(ConfigFactoryInterface $config_factory, FormBuilderInterface $form_builder) {
+    parent::__construct($config_factory);
+    $this->form_builder = $form_builder;
+  }
 
   /**
    * Get the form id.
@@ -85,14 +114,14 @@ class ConfigForm extends ConfigFormBase {
     $form['watch_queues']['placeholder_for_new_queue_item'] = [
       '#type' => 'container',
       '#attributes' => ['id' => 'placeholder-for-new-queue-item'],
-      '#weight' => $num_queue_items * 100 - 10,
+      '#weight' => ($num_queue_items + 1) * 100 - 10,
     ];
     $form['watch_queues']['add'] = [
       '#tree' => FALSE,
       '#type' => 'button',
       '#name' => 'add_new_queue_item',
       '#value' => $this->t('Add another item'),
-      '#weight' => $num_queue_items * 100,
+      '#weight' => ($num_queue_items + 1) * 100,
       '#ajax' => [
         'callback' => [$this, 'addNewQueueItem'],
         'wrapper' => 'placeholder-for-new-queue-item',
@@ -108,8 +137,19 @@ class ConfigForm extends ConfigFormBase {
     // Reset the index counter.
     $form_state->setValue('watch_queues_index', 1);
 
-    foreach ($config->get('watch_queues') as $queue_to_watch) {
-      $this->addQueueItem($form, $form_state, $queue_to_watch);
+    $configured_queues = $config->get('watch_queues');
+    if (isset($configured_queues)) {
+      foreach ($configured_queues as $queue_to_watch) {
+        $this->addQueueItem($form, $form_state, $queue_to_watch);
+      }
+    }
+    else {
+      $empty_settings = [
+        'queue_name' => '',
+        'size_limit_warning' => '',
+        'size_limit_critical' => '',
+      ];
+      $this->addQueueItem($form, $form_state, $empty_settings);
     }
 
     $form['undefined_queue_settings'] = [
@@ -207,8 +247,8 @@ class ConfigForm extends ConfigFormBase {
     $config->set('watch_queues', $queues);
 
     $this->addQueueItem($form, $form_state, $new);
-    $form  = $this->rebuild($form_state, $form);
-    $i = $form_state->getValue('watch_queues_index');
+    $form = $this->rebuild($form_state, $form);
+    $i = $form_state->getValue('watch_queues_index', 1);
     return $form['watch_queues'][$i];
   }
 
@@ -318,8 +358,8 @@ class ConfigForm extends ConfigFormBase {
    */
   protected function rebuild(FormStateInterface $form_state, array &$old_form) {
     $form_state->setRebuild();
-    $form_builder = \Drupal::getContainer()->get('form_builder');
-    $form = $form_builder->rebuildForm($this->getFormId(), $form_state, $old_form);
+    $form = $this->form_builder
+      ->rebuildForm($this->getFormId(), $form_state, $old_form);
     return $form;
   }
 

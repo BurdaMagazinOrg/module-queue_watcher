@@ -471,7 +471,9 @@ class QueueWatcher {
   protected function initQueuesToWatch() {
     $to_watch = [];
     $default = $this->getConfig()->get('default_queue_settings');
-    foreach ($this->getConfig()->get('watch_queues') as $defined) {
+    $configured_queues = $this->getConfig()->get('watch_queues') ?
+      $this->getConfig()->get('watch_queues') : [];
+    foreach ($configured_queues as $defined) {
       if (!empty($defined['queue_name'])) {
         $name = $defined['queue_name'];
         $defined['size_limit_warning'] = !empty($defined['size_limit_warning']) ? $defined['size_limit_warning'] : $default['size_limit_warning'];
