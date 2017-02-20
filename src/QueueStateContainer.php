@@ -11,7 +11,7 @@ class QueueStateContainer {
    *
    * @var QueueState[]
    */
-  protected $states;
+  protected $states = [];
 
   /**
    * Re-fetches the states for the currently known queues.
