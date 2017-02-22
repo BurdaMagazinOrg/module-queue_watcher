@@ -195,13 +195,6 @@ class QueueWatcher {
   }
 
   /**
-   * Get the largest discovered size of all queues being watched.
-   *
-   * @return int
-   *   The largest discovered queue size.
-   */
-
-  /**
    * Reports the current queue states to the configured recipients and logs.
    */
   public function report() {
