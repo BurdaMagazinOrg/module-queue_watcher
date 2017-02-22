@@ -81,6 +81,8 @@ class QueueWatcher {
    *   The QueueStateContainer instance.
    * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
    *   The mail manager.
+   * @param \Drupal\Core\StringTranslation\TranslationInterface $translation_manager
+   *   The translation manager.
    */
   public function __construct(QueueStateContainer $state_container, MailManagerInterface $mail_manager, TranslationInterface $translation_manager) {
     $this->config = \Drupal::config('queue_watcher.config');
@@ -390,7 +392,7 @@ class QueueWatcher {
   /**
    * Logs the current status information.
    *
-   * @param LoggerInterface $logger
+   * @param \Psr\Log\LoggerInterface $logger
    *   (Optional) A specific logger channel instance.
    *   By default, the Queue Watcher channel will be used.
    */
