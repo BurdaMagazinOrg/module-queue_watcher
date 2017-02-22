@@ -2,9 +2,9 @@
 
 namespace Drupal\queue_watcher;
 
-use \Psr\Log\LoggerInterface;
-use \Drupal\Core\Mail\MailManagerInterface;
-use \Drupal\Core\StringTranslation\TranslationInterface;
+use Psr\Log\LoggerInterface;
+use Drupal\Core\Mail\MailManagerInterface;
+use Drupal\Core\StringTranslation\TranslationInterface;
 
 /**
  * The QueueWatcher class.
@@ -49,14 +49,14 @@ class QueueWatcher {
   /**
    * The Drupal logger instance using the queue_watcher channel.
    *
-   * @var LoggerInterface
+   * @var \Psr\Log\LoggerInterface
    */
   protected $logger;
 
   /**
    * The mail manager being used for sending mails.
    *
-   * @var MailManagerInterface
+   * @var \Drupal\Core\Mail\MailManagerInterface
    */
   protected $mailManager;
 
@@ -70,7 +70,7 @@ class QueueWatcher {
   /**
    * The translation manager for translating.
    *
-   * @var TranslationInterface
+   * @var \Drupal\Core\StringTranslation\TranslationInterface
    */
   protected $translationManager;
 
@@ -79,7 +79,7 @@ class QueueWatcher {
    *
    * @param QueueStateContainer $state_container
    *   The QueueStateContainer instance.
-   * @param MailManagerInterface $mail_manager
+   * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
    *   The mail manager.
    */
   public function __construct(QueueStateContainer $state_container, MailManagerInterface $mail_manager, TranslationInterface $translation_manager) {
@@ -486,7 +486,7 @@ class QueueWatcher {
   /**
    * Get the corresponding logger instance.
    *
-   * @return LoggerInterface
+   * @return Psr\Log\LoggerInterface
    *   The logger instance.
    */
   protected function logger() {
@@ -496,7 +496,7 @@ class QueueWatcher {
   /**
    * Get the MailManagerInterface instance.
    *
-   * @return MailManagerInterface
+   * @return Drupal\Core\Mail\MailManagerInterface
    *   The mail manager instance.
    */
   protected function getMailManager() {

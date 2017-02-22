@@ -2,7 +2,7 @@
 
 namespace Drupal\queue_watcher\Form;
 
-use \Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormBuilderInterface;
@@ -19,7 +19,7 @@ class ConfigForm extends ConfigFormBase {
   /**
    * The FormBuilderInterface object.
    *
-   * @var FormBuilderInterface
+   * @var \Drupal\Core\Form\FormBuilderInterface
    */
   protected $formBuilder;
 
