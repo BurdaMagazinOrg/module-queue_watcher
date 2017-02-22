@@ -148,8 +148,56 @@ class QueueWatcher {
     if ($this->getConfig()->get('notify_undefined') && !empty($this->getUndefinedQueueStates())) {
       return TRUE;
     }
+
     return FALSE;
   }
+
+  /**
+   * Get the largest discovered size of all queues being watched.
+   *
+   * @return int
+   *   The largest discovered queue size.
+   */
+  public function getLargestDiscoveredQueueSize() {
+    $largest = 0;
+    foreach ($this->getLookupResult() as $state_level => $states) {
+      foreach ($states as $state) {
+        if ($state->getNumberOfItems() > $largest) {
+          $largest = $state->getNumberOfItems();
+        }
+      }
+    }
+
+    return $largest;
+  }
+
+  /**
+   * Get the worst discovered state level of all queues being watched.
+   *
+   * @return string
+   *   The worst discovered queue state level.
+   *   Might be one of 'critical', 'warning', 'sane' or 'undefined'.
+   */
+  public function getWorstDiscoveredStateLevel() {
+    if (!empty($this->getCriticalQueueStates())) {
+      return 'critical';
+    }
+    if (!empty($this->getWarningQueueStates())) {
+      return 'warning';
+    }
+    if ($this->getConfig()->get('notify_undefined') && !empty($this->getUndefinedQueueStates())) {
+      return 'undefined';
+    }
+
+    return 'sane';
+  }
+
+  /**
+   * Get the largest discovered size of all queues being watched.
+   *
+   * @return int
+   *   The largest discovered queue size.
+   */
 
   /**
    * Reports the current queue states to the configured recipients and logs.

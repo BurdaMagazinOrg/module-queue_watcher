@@ -24,6 +24,22 @@ function queue_watcher_drush_command() {
     ],
   ];
 
+  $commands['queue-watcher-get-state'] = [
+    'description' => dt('Performs a lookup and shows the worst discovered state level of all available queues, or the current state regarding a single queue when given as argument.'),
+    'core' => ['8+'],
+    'arguments' => [
+      'queue' => dt('(Optional) The machine name of a queue. When given, the output will be the state level exclusively regarding this queue.'),
+    ],
+  ];
+
+  $commands['queue-watcher-get-size'] = [
+    'description' => dt('Performs a lookup and shows the largest size of all available queues, or the current size regarding a single queue when given as argument.'),
+    'core' => ['8+'],
+    'arguments' => [
+      'queue' => dt('(Optional) The machine name of a queue. When given, the output will be the size exclusively regarding this queue.'),
+    ],
+  ];
+
   return $commands;
 }
 
@@ -71,5 +87,55 @@ function drush_queue_watcher_lookup() {
       drush_print(dt('The summary above has just been sent to the configured recipients.'));
       drush_print('------------------------------------------------------');
     }
+  }
+}
+
+/**
+ * Shows the worst discovered state level of all queues, or for a given queue.
+ *
+ * @param string $queue_name
+ *   (Optional) The machine name of the queue.
+ */
+function drush_queue_watcher_get_state($queue_name = NULL) {
+  /* @var \Drupal\queue_watcher\QueueWatcher $watcher */
+  $watcher = \Drupal::service('queue_watcher');
+
+  if (!empty($queue_name)) {
+    $watcher->getStateContainer()->addEmptyState($queue_name);
+  }
+
+  $watcher->lookup();
+
+  if (!empty($queue_name)) {
+    $state = $watcher->getStateContainer()->getState($queue_name);
+    drush_print($state->getStateLevel());
+  }
+  else {
+    drush_print($watcher->getWorstDiscoveredStateLevel());
+  }
+}
+
+/**
+ * Shows the largest size of all queues, or for a given queue.
+ *
+ * @param string $queue_name
+ *   (Optional) The machine name of the queue.
+ */
+function drush_queue_watcher_get_size($queue_name = NULL) {
+  /* @var \Drupal\queue_watcher\QueueWatcher $watcher */
+  $watcher = \Drupal::service('queue_watcher');
+
+  if (!empty($queue_name)) {
+    $watcher->getStateContainer()->addEmptyState($queue_name);
+  }
+
+  $watcher->lookup();
+
+  if (!empty($queue_name)) {
+    $state = $watcher->getStateContainer()->getState($queue_name);
+    drush_print($state->getNumberOfItems());
+  }
+  else {
+    drush_print($watcher->getLargestDiscoveredQueueSize());
   }
 }
