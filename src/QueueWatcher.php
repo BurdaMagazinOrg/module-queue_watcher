@@ -2,6 +2,7 @@
 
 namespace Drupal\queue_watcher;
 
+use Psr\Log\LoggerInterface;
 use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Core\Config\ConfigFactory;
