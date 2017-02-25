@@ -1,6 +1,7 @@
 services:
   queue_watcher:
     class: Drupal\queue_watcher\QueueWatcher
-    arguments: ['@queue_watcher.state_container', '@plugin.manager.mail', '@string_translation']
+    arguments: ['@queue_watcher.state_container', '@plugin.manager.mail', '@language_manager', '@string_translation', '@config.factory', '@logger.factory', '@entity_type.manager']
   queue_watcher.state_container:
     class: Drupal\queue_watcher\QueueStateContainer
+    arguments: ['@queue', '@plugin.manager.queue_worker']

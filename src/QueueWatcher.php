@@ -2,9 +2,12 @@
 
 namespace Drupal\queue_watcher;
 
-use Psr\Log\LoggerInterface;
 use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
+use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Logger\LoggerChannelFactory;
+use Drupal\Core\Language\LanguageManager;
+use Drupal\Core\Entity\EntityTypeManager;
 
 /**
  * The QueueWatcher class.
@@ -14,7 +17,7 @@ class QueueWatcher {
   /**
    * The corresponding Queue Watcher configuration.
    *
-   * @var \Drupal\Core\Config\ImmutableConfig
+   * @var Drupal\Core\Config\ImmutableConfig
    */
   protected $config;
 
@@ -49,14 +52,14 @@ class QueueWatcher {
   /**
    * The Drupal logger instance using the queue_watcher channel.
    *
-   * @var \Psr\Log\LoggerInterface
+   * @var Drupal\Core\Logger\LoggerChannelInterface 
    */
   protected $logger;
 
   /**
    * The mail manager being used for sending mails.
    *
-   * @var \Drupal\Core\Mail\MailManagerInterface
+   * @var Drupal\Core\Mail\MailManagerInterface
    */
   protected $mailManager;
 
@@ -70,36 +73,68 @@ class QueueWatcher {
   /**
    * The translation manager for translating.
    *
-   * @var \Drupal\Core\StringTranslation\TranslationInterface
+   * @var Drupal\Core\StringTranslation\TranslationInterface
    */
   protected $translationManager;
+
+  /**
+   * The configuration factory instance.
+   *
+   * @var Drupal\Core\Config\ConfigFactory
+   */
+   protected $configFactory;
+
+  /**
+   * The entity type manager.
+   *
+   * @var Drupal\Core\Entity\EntityTypeManager
+   */
+  protected $entityTypeManager;
 
   /**
    * QueueWatcher constructor method.
    *
    * @param QueueStateContainer $state_container
    *   The QueueStateContainer instance.
-   * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
+   * @param Drupal\Core\Mail\MailManagerInterface $mail_manager
    *   The mail manager.
-   * @param \Drupal\Core\StringTranslation\TranslationInterface $translation_manager
+   * @param Drupal\Core\Language\LanguageManager $language_manager
+   *   The language manager.
+   * @param Drupal\Core\StringTranslation\TranslationInterface $translation_manager
    *   The translation manager.
+   * @param Drupal\Core\Config\ConfigFactory $config_factory
+   *   The configuration factory instance.
+   * @param Drupal\Core\Logger\LoggerChannelFactory $logger_factory
+   *   The channel logger factory.
+   * @param Drupal\Core\Entity\EntityTypeManager $entity_type_manager
+   *   The entity type manager.
    */
-  public function __construct(QueueStateContainer $state_container, MailManagerInterface $mail_manager, TranslationInterface $translation_manager) {
-    $this->config = \Drupal::config('queue_watcher.config');
-    $this->logger = \Drupal::logger('queue_watcher');
-    $this->stateContainer = $state_container;
-    $this->mailManager = $mail_manager;
-    $this->translationManager = $translation_manager;
-    $this->currentLangcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
-    $this->initQueuesToWatch();
-    $this->initRecipientsToReport();
-    $this->initLookupResult();
-  }
+  public function __construct(
+    QueueStateContainer $state_container,
+    MailManagerInterface $mail_manager,
+    LanguageManager $language_manager,
+    TranslationInterface $translation_manager,
+    ConfigFactory $config_factory,
+    LoggerChannelFactory $logger_factory,
+    EntityTypeManager $entity_type_manager
+  ) {
+      $this->config = $config_factory->get('queue_watcher.config');
+      $this->logger = $logger_factory->get('queue_watcher');
+      $this->stateContainer = $state_container;
+      $this->mailManager = $mail_manager;
+      $this->currentLangcode = $language_manager->getCurrentLanguage()->getId();
+      $this->translationManager = $translation_manager;
+      $this->configFactory = $config_factory;
+      $this->entityTypeManager = $entity_type_manager;
+      $this->initQueuesToWatch();
+      $this->initRecipientsToReport();
+      $this->initLookupResult();
+    }
 
   /**
    * Get the Queue Watcher configuration.
    *
-   * @return \Drupal\Core\Config\ImmutableConfig
+   * @return Drupal\Core\Config\ImmutableConfig
    *   The configuration object.
    */
   public function getConfig() {
@@ -385,9 +420,9 @@ class QueueWatcher {
   /**
    * Logs the current status information.
    *
-   * @param \Psr\Log\LoggerInterface $logger
-   *   (Optional) A specific logger channel instance.
-   *   By default, the Queue Watcher channel will be used.
+   * @param Psr\Log\LoggerInterface $logger
+   *   (Optional) A specific logger instance.
+   *   By default, the Queue Watcher channel logger will be used.
    */
   public function logStatus(LoggerInterface $logger = NULL) {
     if (!isset($logger)) {
@@ -429,10 +464,10 @@ class QueueWatcher {
       if (!empty($this->getCriticalQueueStates())) {
         $overall = $this->t('Critical');
       }
-      $site = \Drupal::config('system.site')->get('name');
+      $site_name = $this->configFactory->get('system.site')->get('name');
 
       $prepared_subject = $this->t('@overall - Queue Watcher status report from @site',
-        ['@overall' => $overall, '@site' => $site], ['langcode' => $langcode]);
+        ['@overall' => $overall, '@site' => $site_name], ['langcode' => $langcode]);
       $prepared_info = nl2br($this->getReadableStatus($langcode));
       $params = [
         'prepared_subject' => $prepared_subject,
@@ -440,7 +475,8 @@ class QueueWatcher {
         'watcher_instance' => $this,
       ];
       foreach ($mail_addresses as $mail_address) {
-        $this->getMailManager()->mail('queue_watcher', 'status', $mail_address, $langcode, $params);
+        $this->mailManager
+          ->mail('queue_watcher', 'status', $mail_address, $langcode, $params);
       }
     }
   }
@@ -481,21 +517,11 @@ class QueueWatcher {
   /**
    * Get the corresponding logger instance.
    *
-   * @return Psr\Log\LoggerInterface
+   * @return Drupal\Core\Logger\LoggerChannelFactory
    *   The logger instance.
    */
   protected function logger() {
     return $this->logger;
-  }
-
-  /**
-   * Get the MailManagerInterface instance.
-   *
-   * @return Drupal\Core\Mail\MailManagerInterface
-   *   The mail manager instance.
-   */
-  protected function getMailManager() {
-    return $this->mailManager;
   }
 
   /**
@@ -536,7 +562,7 @@ class QueueWatcher {
       $recipients[$address] = $address;
     }
     if ($this->getConfig()->get('use_site_mail')) {
-      $site = \Drupal::config('system.site');
+      $site = $this->configFactory->get('system.site');
       if ($address = $site->get('mail')) {
         $recipients[$address] = $address;
       }

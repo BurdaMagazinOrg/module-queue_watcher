@@ -2,10 +2,39 @@
 
 namespace Drupal\queue_watcher;
 
+use Drupal\Core\Queue\QueueFactory;
+use Drupal\Core\Queue\QueueWorkerManager;
+
 /**
  * A container class which holds several queue states.
  */
 class QueueStateContainer {
+
+  /**
+   * The QueueFactory instance.
+   *
+   * @var Drupal\Core\Queue\QueueFactory
+   */
+  protected $queueFactory;
+
+  /**
+   * A list of known worker definitions, keyed by queue name.
+   *
+   * @var array
+   */
+  protected $workerDefinitions;
+
+  /**
+   * QueueStateContainer constructor.
+   *
+   * @param Drupal\Core\Queue\QueueFactory $queue_factory
+   *   The QueueFactory instance.
+   */
+  public function __construct(QueueFactory $queue_factory, QueueWorkerManager $worker_manager) {
+    $this->queueFactory = $queue_factory;
+    $this->workerDefinitions = $worker_manager->getDefinitions();
+  }
+
   /**
    * The queue states being hold by this container.
    *
@@ -14,7 +43,7 @@ class QueueStateContainer {
   protected $states = [];
 
   /**
-   * Re-fetches the states for the currently known queues.
+   * Refreshes the states for the currently known queues.
    *
    * @param QueueState $state
    *   When given, only the state of this queue will be refreshed.
@@ -23,30 +52,34 @@ class QueueStateContainer {
    *   The state container itself.
    */
   public function refresh(QueueState $state = NULL) {
-    $query = $this->query();
-    if (isset($state)) {
-      $name = $state->getQueueName();
-      $query->where('q.name = :name', [':name' => $name]);
-    }
+    $to_refresh = isset($state) ? [$state] : array_keys($this->workerDefinitions);
 
-    $rows = $query->execute()->fetchAllAssoc('name');
-    $fetched_states = [];
-    foreach ($rows as $queue_name => $row) {
+    $refreshed = [];
+    foreach ($to_refresh as $queue_name) {
+
+      $queue = $this->queueFactory->get($queue_name, FALSE);
+      if (!$queue) {
+        continue;
+      }
+
+      $num_items = (int) $queue->numberOfItems();
 
       if (isset($this->states[$queue_name])) {
-        $this->states[$queue_name]->setNumberOfItems($row->num_items);
+        $this->states[$queue_name]->setNumberOfItems($num_items);
       }
       else {
-        $this->states[$queue_name] = new QueueState($queue_name, $row->num_items);
+        $this->states[$queue_name] = new QueueState($queue_name, $num_items);
       }
-      $fetched_states[$queue_name] = $this->states[$queue_name];
+      $refreshed[$queue_name] = $this->states[$queue_name];
     }
 
-    if (!isset($state) || empty($rows)) {
+    if (!isset($state)) {
       // There might be observed queues, which are empty now.
+      // Manually refresh these states to be empty.
       foreach ($this->states as $queue_name => $state) {
-        if (empty($fetched_states[$queue_name])) {
+        if (empty($refreshed[$queue_name])) {
           $state->setNumberOfItems(0);
+          $refreshed[$queue_name] = $this->states[$queue_name];
         }
       }
     }
@@ -74,7 +107,7 @@ class QueueStateContainer {
   /**
    * Get all known queue states.
    *
-   * This method always runs a query on the database,
+   * This method always runs a full refresh,
    * while ::getState() can use in-memory caching once a state has been fetched.
    *
    * @return QueueState[]
@@ -89,7 +122,7 @@ class QueueStateContainer {
   }
 
   /**
-   * Adds an empty queue state, if isn't known yet.
+   * Adds an empty queue state, if it isn't known yet.
    *
    * @param string $queue_name
    *   The name of the queue to track the state.
@@ -98,18 +131,6 @@ class QueueStateContainer {
     if (!isset($this->states[$queue_name])) {
       $this->states[$queue_name] = new QueueState($queue_name, 0);
     }
-  }
-
-  /**
-   * Helper function to return a base query on the queue table.
-   */
-  protected function query() {
-    $query = \Drupal::database()
-      ->select('queue', 'q')
-      ->fields('q', ['name'])
-      ->groupBy('name');
-    $query->addExpression('COUNT(q.item_id)', 'num_items');
-    return $query;
   }
 
 }
