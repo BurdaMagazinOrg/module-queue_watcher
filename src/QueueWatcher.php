@@ -52,7 +52,7 @@ class QueueWatcher {
   /**
    * The Drupal logger instance using the queue_watcher channel.
    *
-   * @var Drupal\Core\Logger\LoggerChannelInterface 
+   * @var Drupal\Core\Logger\LoggerChannelInterface
    */
   protected $logger;
 
@@ -82,7 +82,7 @@ class QueueWatcher {
    *
    * @var Drupal\Core\Config\ConfigFactory
    */
-   protected $configFactory;
+  protected $configFactory;
 
   /**
    * The entity type manager.
@@ -118,18 +118,19 @@ class QueueWatcher {
     LoggerChannelFactory $logger_factory,
     EntityTypeManager $entity_type_manager
   ) {
-      $this->config = $config_factory->get('queue_watcher.config');
-      $this->logger = $logger_factory->get('queue_watcher');
-      $this->stateContainer = $state_container;
-      $this->mailManager = $mail_manager;
-      $this->currentLangcode = $language_manager->getCurrentLanguage()->getId();
-      $this->translationManager = $translation_manager;
-      $this->configFactory = $config_factory;
-      $this->entityTypeManager = $entity_type_manager;
-      $this->initQueuesToWatch();
-      $this->initRecipientsToReport();
-      $this->initLookupResult();
-    }
+
+    $this->config = $config_factory->get('queue_watcher.config');
+    $this->logger = $logger_factory->get('queue_watcher');
+    $this->stateContainer = $state_container;
+    $this->mailManager = $mail_manager;
+    $this->currentLangcode = $language_manager->getCurrentLanguage()->getId();
+    $this->translationManager = $translation_manager;
+    $this->configFactory = $config_factory;
+    $this->entityTypeManager = $entity_type_manager;
+    $this->initQueuesToWatch();
+    $this->initRecipientsToReport();
+    $this->initLookupResult();
+  }
 
   /**
    * Get the Queue Watcher configuration.
@@ -197,7 +198,7 @@ class QueueWatcher {
    */
   public function getLargestDiscoveredQueueSize() {
     $largest = 0;
-    foreach ($this->getLookupResult() as $state_level => $states) {
+    foreach ($this->getLookupResult() as $states) {
       foreach ($states as $state) {
         if ($state->getNumberOfItems() > $largest) {
           $largest = $state->getNumberOfItems();
@@ -267,10 +268,10 @@ class QueueWatcher {
 
     $info = '------------------------------------------------------' . "\n";
     if ($this->foundProblems()) {
-      $info .= $this->t(".. The Queue Watcher has detected problematic queue states! ..") . "\n";
+      $info .= '.. ' . $this->t("The Queue Watcher has detected problematic queue states!") . ' ..' . "\n";
     }
     else {
-      $info .= $this->t(".. The Queue Watcher hasn't found any problematic queue states. ..") . "\n";
+      $info .= '.. ' . $this->t("The Queue Watcher hasn't found any problematic queue states.") . ' ..' . "\n";
     }
     $info .= '------------------------------------------------------' . "\n";
     foreach ($this->getLookupResult() as $states) {
@@ -568,7 +569,7 @@ class QueueWatcher {
       }
     }
     if ($this->getConfig()->get('use_admin_mail')) {
-      $account = \Drupal::entityTypeManager()->getStorage('user')->load(1);
+      $account = $this->entityTypeManager->getStorage('user')->load(1);
       if ($account && ($address = $account->getEmail())) {
         $recipients[$address] = $address;
       }

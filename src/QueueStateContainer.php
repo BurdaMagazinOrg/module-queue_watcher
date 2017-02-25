@@ -29,6 +29,8 @@ class QueueStateContainer {
    *
    * @param Drupal\Core\Queue\QueueFactory $queue_factory
    *   The QueueFactory instance.
+   * @param Drupal\Core\Queue\QueueWorkerManager $worker_manager
+   *   The QueueWorkerManager instance.
    */
   public function __construct(QueueFactory $queue_factory, QueueWorkerManager $worker_manager) {
     $this->queueFactory = $queue_factory;

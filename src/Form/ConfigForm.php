@@ -331,6 +331,14 @@ class ConfigForm extends ConfigFormBase {
 
   /**
    * Marks a queue item to be removed from the form.
+   *
+   * @param array &$form
+   *   The form array.
+   * @param Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
+   *
+   * @return array
+   *   A renderable array.
    */
   public function removeQueueItem(array &$form, FormStateInterface $form_state) {
     $trigger = $form_state->getTriggeringElement();
@@ -348,7 +356,7 @@ class ConfigForm extends ConfigFormBase {
   /**
    * Helper function to rebuild the form when necessary.
    *
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   * @param Drupal\Core\Form\FormStateInterface $form_state
    *   The form state.
    * @param array &$old_form
    *   The old form build.
