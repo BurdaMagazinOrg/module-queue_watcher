@@ -119,6 +119,7 @@ class ConfigForm extends ConfigFormBase {
     $form['watch_queues']['add'] = [
       '#tree' => FALSE,
       '#type' => 'button',
+      '#limit_validation_errors' => [],
       '#name' => 'add_new_queue_item',
       '#value' => $this->t('Add another item'),
       '#weight' => ($num_queue_items + 1) * 100,
@@ -312,6 +313,7 @@ class ConfigForm extends ConfigFormBase {
     ];
     $form['watch_queues'][$i]['remove'] = [
       '#type' => 'button',
+      '#limit_validation_errors' => [],
       '#name' => 'remove_queue_item_' . $i,
       '#value' => $this->t('Remove this item'),
       '#ajax' => [
