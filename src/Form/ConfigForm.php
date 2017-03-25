@@ -10,6 +10,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\StatusMessages;
 use Drupal\Component\Utility\Html;
+use Egulias\EmailValidator\EmailValidator;
 
 /**
  * Class for the Queue Watcher configuration form.
@@ -23,22 +24,38 @@ class ConfigForm extends ConfigFormBase {
    */
   protected $formBuilder;
 
+ /**
+  * The email validator.
+  *
+  * @var \Egulias\EmailValidator\EmailValidator
+  */
+  protected $emailValidator;
+
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
-      $container->get('form_builder')
+      $container->get('form_builder'),
+      $container->get('email.validator')
     );
   }
 
   /**
-   * {@inheritdoc}
+   * Form constructor method.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The configuration factory.
+   * @param \Drupal\Core\Form\FormBuilderInterface $form_builder
+   *   The form builder instance.
+   * @param \Egulias\EmailValidator\EmailValidator $email_validator
+   *   The email validator.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, FormBuilderInterface $form_builder) {
+  public function __construct(ConfigFactoryInterface $config_factory, FormBuilderInterface $form_builder, EmailValidator $email_validator) {
     parent::__construct($config_factory);
     $this->formBuilder = $form_builder;
+    $this->emailValidator = $email_validator;
   }
 
   /**
@@ -163,16 +180,14 @@ class ConfigForm extends ConfigFormBase {
     ];
     $default_queue_settings = $config->get('default_queue_settings');
     $form['undefined_queue_settings']['size_limit_warning'] = [
-      '#type' => 'textfield',
-      '#maxlength' => 255,
+      '#type' => 'number',
       '#title' => $this->t('The default size limit as a valid, but undesired number of items'),
       '#default_value' => $default_queue_settings['size_limit_warning'],
       '#description' => $this->t("Leave it empty if you don't have an undesired limit. May be useful if you want to have a buffer for preparing performance optimizations. Writes a warning in the log (if writing into system log is activated above)."),
       '#weight' => 10,
     ];
     $form['undefined_queue_settings']['size_limit_critical'] = [
-      '#type' => 'textfield',
-      '#maxlength' => 255,
+      '#type' => 'number',
       '#title' => $this->t('The default size limit as a critical, maximum allowed number of items'),
       '#default_value' => $default_queue_settings['size_limit_critical'],
       '#description' => $this->t("Leave it empty if you don't have a critical limit. Writes an error in the log (if writing into system log is activated above)."),
@@ -189,6 +204,26 @@ class ConfigForm extends ConfigFormBase {
     $form['actions']['#weight'] = 100;
 
     return $form;
+  }
+
+  /**
+   * Validate config form.
+   *
+   * @param array $form
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $emails = trim($form_state->getValue('mail_recipients', ''));
+    if (!empty($emails)) {
+      foreach (explode(', ', $emails) as $email) {
+        if (!$this->emailValidator->isValid($email)) {
+          $form_state->setErrorByName('mail_recipients', $this->t('The email address %mail is not valid.', array('%mail' => $email)));
+        }
+      }
+    }
+    parent::validateForm($form, $form_state);
   }
 
   /**
